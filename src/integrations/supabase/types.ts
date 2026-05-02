@@ -14,16 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      expenses: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          fund_id: string
+          id: string
+          payee: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          fund_id: string
+          id?: string
+          payee?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          fund_id?: string
+          id?: string
+          payee?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funds: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          joining_date: string
+          member_no: number
+          member_type: Database["public"]["Enums"]["member_type"]
+          mobile: string | null
+          monthly_fee: number
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          joining_date?: string
+          member_no?: number
+          member_type?: Database["public"]["Enums"]["member_type"]
+          mobile?: string | null
+          monthly_fee?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          joining_date?: string
+          member_no?: number
+          member_type?: Database["public"]["Enums"]["member_type"]
+          mobile?: string | null
+          monthly_fee?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      receipts: {
+        Row: {
+          amount: number
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_to: string
+          receipt_no: string
+          serial: number
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_to: string
+          receipt_no: string
+          serial?: number
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_to?: string
+          receipt_no?: string
+          serial?: number
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          donor_name: string | null
+          for_month: string | null
+          fund_id: string
+          id: string
+          member_id: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          txn_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          donor_name?: string | null
+          for_month?: string | null
+          fund_id: string
+          id?: string
+          member_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          txn_date?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          donor_name?: string | null
+          for_month?: string | null
+          fund_id?: string
+          id?: string
+          member_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          txn_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      member_type: "founding" | "executive" | "general"
+      payment_method: "cash" | "bkash" | "nagad" | "rocket" | "bank" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +431,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      member_type: ["founding", "executive", "general"],
+      payment_method: ["cash", "bkash", "nagad", "rocket", "bank", "other"],
+    },
   },
 } as const
