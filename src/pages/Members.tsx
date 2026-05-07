@@ -48,8 +48,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Power } from "lucide-react";
+import { Plus, Search, Pencil, Power, Wallet } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialog";
 
 type MemberType = Database["public"]["Enums"]["member_type"];
 type Member = Database["public"]["Tables"]["members"]["Row"];
