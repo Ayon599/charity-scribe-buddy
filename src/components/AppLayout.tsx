@@ -10,15 +10,19 @@ import {
   ArrowUpCircle,
   FileText,
   LogOut,
+  Tags,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/members", label: "Members", icon: Users },
+  { to: "/member-types", label: "Member Types", icon: Tags },
   { to: "/funds", label: "Funds", icon: Wallet },
   { to: "/income", label: "Income", icon: ArrowDownCircle },
   { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
+  { to: "/dues", label: "Dues", icon: Receipt },
   { to: "/reports", label: "Reports", icon: FileText },
 ];
 
