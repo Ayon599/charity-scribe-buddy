@@ -11,6 +11,8 @@ import Members from "./pages/Members";
 import Funds from "./pages/Funds";
 import Income from "./pages/Income";
 import Expenses from "./pages/Expenses";
+import MemberTypes from "./pages/MemberTypes";
+import Dues from "./pages/Dues";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
