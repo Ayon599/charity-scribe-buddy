@@ -1,45 +1,85 @@
-## Auth + App Shell + Dashboard
+## Goal
 
-The database is already set up. The first person to sign up is automatically made the admin (via the `handle_new_user` database trigger we already created).
+Two related changes:
+1. Replace the hard-coded **Member Type** enum (`founding / executive / general`) with a manageable list so admins can add/edit types from the UI.
+2. Add **per-member fund subscriptions** so each member can be subscribed to one or more funds with an expected monthly amount — enabling member-wise due tracking per fund.
 
-### What gets built
+---
 
-**1. Auth context (`src/hooks/useAuth.tsx`)**
-- Wraps the app, tracks session + user + admin role
-- Subscribes to auth state changes (listener set BEFORE getSession to avoid race conditions)
-- Exposes `user`, `loading`, `isAdmin`, `signOut`
+## 1. Member Types — manageable list
 
-**2. Auth page (`src/pages/Auth.tsx`) at `/auth`**
-- Tabs for **Sign In** and **Sign Up** (email + password)
-- Sign-up form collects full name, email, password (stored in `user_metadata.full_name`, picked up by the DB trigger to create the profile)
-- Zod validation on both forms (email format, min 6-char password, max lengths)
-- On signup: shows "check email to confirm" toast (Cloud requires email confirmation by default)
-- Note: First account to sign up automatically gets the `admin` role
+### Database
+New table `member_types`:
+- `id uuid pk`
+- `name text unique not null` (e.g. "Founding", "Executive", "General", "Honorary"…)
+- `description text`
+- `is_active boolean default true`
+- `sort_order int default 0`
+- timestamps + `updated_at` trigger
+- RLS: admins manage, authenticated read
 
-**3. Protected route wrapper (`src/components/ProtectedRoute.tsx`)**
-- Shows spinner while loading
-- Redirects unauthenticated users to `/auth`
+Migrate `members.member_type`:
+- Add `member_type_id uuid` column referencing `member_types(id)`
+- Seed `member_types` with the existing three enum values
+- Backfill `member_type_id` from current enum values
+- Keep the old enum column for now (drop later) to avoid breaking other pages; new code reads `member_type_id`
 
-**4. App shell (`src/components/AppLayout.tsx`)**
-- Left sidebar with navigation: Dashboard, Members, Funds, Income, Expenses, Reports
-- Shows current user email + Sign Out button at bottom
-- Mobile-friendly top bar
+### UI
+- New page **`/member-types`** (`src/pages/MemberTypes.tsx`): CRUD list (name, description, active toggle, sort order) — same pattern as Funds page
+- Add link in `AppLayout` sidebar under Members
+- Update **Members page** Add/Edit dialog and filter dropdown to load types from `member_types` table instead of the hard-coded list
 
-**5. Real dashboard (`src/pages/Index.tsx`)**
-- Three top KPI cards: Total Income, Total Expense, Net Balance (in BDT ৳)
-- Per-fund cards showing income / expense / balance for each of the 7 funds
-- Pulls live data from `funds`, `transactions`, `expenses` tables
+---
 
-**6. Wire up routes (`src/App.tsx`)**
-- `/auth` → Auth page (public)
-- `/` → Dashboard (protected)
-- Wrap the Routes with `<AuthProvider>`
+## 2. Member ↔ Fund subscriptions (member-wise dues)
 
-### A couple of things worth noting
+### Database
+New table `member_fund_subscriptions`:
+- `id uuid pk`
+- `member_id uuid not null` → members.id
+- `fund_id uuid not null` → funds.id
+- `monthly_amount numeric not null default 0` (expected per-month contribution to this fund)
+- `start_date date not null default current_date`
+- `end_date date null` (null = ongoing)
+- `is_active boolean default true`
+- timestamps, `updated_at` trigger
+- unique `(member_id, fund_id)` while active
+- RLS: admins manage
 
-- **Email confirmation is ON by default.** That means after you sign up, you'll get a confirmation email and must click the link before you can sign in. If you'd like me to disable that for faster testing (auto-confirm signups), tell me — but for a real charity admin app, keeping it on is safer.
-- **Google sign-in not included** — your previous answer specified single admin only. Easy to add later if you change your mind.
-- **No "forgot password" flow yet** — can add in a follow-up if you want.
-- The remaining tabs (Members, Funds, Income, Expenses, Reports) will route to "Coming soon" placeholders for now — I'll build them in the next steps after you can sign in and see the dashboard.
+### UI
+- On the Members page, add a **"Funds"** action button per row → opens a dialog listing all active funds with checkboxes + monthly amount input + start date, persisting to `member_fund_subscriptions`
+- New page **`/dues`** (`src/pages/Dues.tsx`):
+  - Filter by member and/or fund and month range
+  - For each (member, fund) subscription:
+    - **Expected** = months between `start_date` (or filter start) and selected end month × `monthly_amount`
+    - **Paid** = sum of `transactions.amount` where `member_id` and `fund_id` match in that range
+    - **Due** = Expected − Paid (highlight if > 0)
+  - Totals row per member and grand total
+- Sidebar link "Dues"
 
-Approve and I'll implement it.
+### Income page tweak (small)
+When a member is selected, default the fund dropdown to one of their active subscriptions and pre-fill `amount` with the subscription's `monthly_amount` (falls back to existing `members.monthly_fee` behavior if no subscription).
+
+---
+
+## Files
+
+**Created**
+- `supabase/migrations/<ts>_member_types_and_subscriptions.sql`
+- `src/pages/MemberTypes.tsx`
+- `src/pages/Dues.tsx`
+- `src/components/MemberSubscriptionsDialog.tsx`
+
+**Edited**
+- `src/pages/Members.tsx` — load types from DB, add "Funds" action button
+- `src/pages/Income.tsx` — auto-fill from subscription when available
+- `src/components/AppLayout.tsx` — add "Member Types" and "Dues" nav links
+- `src/App.tsx` — add `/member-types` and `/dues` routes
+
+---
+
+## Notes / assumptions
+
+- Keeping the existing `member_type` enum column during this change (deprecated, not displayed). A follow-up can drop it once we confirm nothing else reads it.
+- `monthly_fee` on `members` becomes informational only; dues are calculated from `member_fund_subscriptions`. We won't remove the column.
+- Dues math is simple "months × amount"; partial months count as a full month from `start_date`. Good enough for a foundation; can refine later.

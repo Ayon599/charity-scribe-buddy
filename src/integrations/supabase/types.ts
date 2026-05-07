@@ -97,6 +97,90 @@ export type Database = {
         }
         Relationships: []
       }
+      member_fund_subscriptions: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          fund_id: string
+          id: string
+          is_active: boolean
+          member_id: string
+          monthly_amount: number
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          fund_id: string
+          id?: string
+          is_active?: boolean
+          member_id: string
+          monthly_amount?: number
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          fund_id?: string
+          id?: string
+          is_active?: boolean
+          member_id?: string
+          monthly_amount?: number
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_fund_subscriptions_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_fund_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       members: {
         Row: {
           address: string | null
@@ -108,6 +192,7 @@ export type Database = {
           joining_date: string
           member_no: number
           member_type: Database["public"]["Enums"]["member_type"]
+          member_type_id: string | null
           mobile: string | null
           monthly_fee: number
           notes: string | null
@@ -123,6 +208,7 @@ export type Database = {
           joining_date?: string
           member_no?: number
           member_type?: Database["public"]["Enums"]["member_type"]
+          member_type_id?: string | null
           mobile?: string | null
           monthly_fee?: number
           notes?: string | null
@@ -138,12 +224,21 @@ export type Database = {
           joining_date?: string
           member_no?: number
           member_type?: Database["public"]["Enums"]["member_type"]
+          member_type_id?: string | null
           mobile?: string | null
           monthly_fee?: number
           notes?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "members_member_type_id_fkey"
+            columns: ["member_type_id"]
+            isOneToOne: false
+            referencedRelation: "member_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
