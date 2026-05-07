@@ -191,7 +191,7 @@ export type Database = {
           is_active: boolean
           joining_date: string
           member_no: number
-          member_type: Database["public"]["Enums"]["member_type"]
+          member_type: Database["public"]["Enums"]["member_type"] | null
           member_type_id: string | null
           mobile: string | null
           monthly_fee: number
@@ -207,7 +207,7 @@ export type Database = {
           is_active?: boolean
           joining_date?: string
           member_no?: number
-          member_type?: Database["public"]["Enums"]["member_type"]
+          member_type?: Database["public"]["Enums"]["member_type"] | null
           member_type_id?: string | null
           mobile?: string | null
           monthly_fee?: number
@@ -223,7 +223,7 @@ export type Database = {
           is_active?: boolean
           joining_date?: string
           member_no?: number
-          member_type?: Database["public"]["Enums"]["member_type"]
+          member_type?: Database["public"]["Enums"]["member_type"] | null
           member_type_id?: string | null
           mobile?: string | null
           monthly_fee?: number
