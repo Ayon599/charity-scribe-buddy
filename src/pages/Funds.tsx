@@ -18,7 +18,11 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Fund = Database["public"]["Tables"]["funds"]["Row"];
