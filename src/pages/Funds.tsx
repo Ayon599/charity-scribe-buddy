@@ -52,6 +52,36 @@ export default function Funds() {
   const [editing, setEditing] = useState<Fund | null>(null);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState<Fund | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Fund | null>(null);
+
+  async function confirmToggle() {
+    if (!toggleTarget) return;
+    const { error } = await supabase.from("funds")
+      .update({ is_active: !toggleTarget.is_active }).eq("id", toggleTarget.id);
+    if (error) toast({ title: "Action failed", description: error.message, variant: "destructive" });
+    else { toast({ title: toggleTarget.is_active ? "Fund deactivated" : "Fund activated" }); fetchFunds(); }
+    setToggleTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const [tx, ex, sub] = await Promise.all([
+      supabase.from("transactions").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+      supabase.from("expenses").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+      supabase.from("member_fund_subscriptions").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+    ]);
+    const refs = (tx.count ?? 0) + (ex.count ?? 0) + (sub.count ?? 0);
+    if (refs > 0) {
+      toast({ title: "Cannot delete", description: `Fund is referenced by ${refs} record(s).`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    const { error } = await supabase.from("funds").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Fund deleted" }); fetchFunds(); }
+    setDeleteTarget(null);
+  }
 
   useEffect(() => {
     document.title = "Funds | Prottoy Foundation";
