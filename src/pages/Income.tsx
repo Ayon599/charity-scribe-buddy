@@ -279,12 +279,13 @@ export default function Income() {
                     <TableHead>Fund</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No income recorded.
                       </TableCell>
                     </TableRow>
@@ -312,6 +313,16 @@ export default function Income() {
                         <Badge variant="outline">{PAYMENT_LABEL[r.payment_method as PaymentMethod]}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(r)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
