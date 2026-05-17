@@ -43,6 +43,24 @@ export default function MemberTypes() {
   const [editing, setEditing] = useState<MemberTypeRow | null>(null);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MemberTypeRow | null>(null);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { count } = await supabase
+      .from("member_member_types")
+      .select("member_id", { count: "exact", head: true })
+      .eq("member_type_id", deleteTarget.id);
+    if ((count ?? 0) > 0) {
+      toast({ title: "Cannot delete", description: `${count} member(s) still use this type.`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    const { error } = await supabase.from("member_types").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Type deleted" }); fetchRows(); }
+    setDeleteTarget(null);
+  }
 
   useEffect(() => {
     document.title = "Member Types | Prottoy Foundation";
