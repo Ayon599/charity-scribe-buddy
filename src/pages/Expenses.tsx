@@ -65,6 +65,8 @@ export default function Expenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
