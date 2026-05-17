@@ -1,85 +1,73 @@
 ## Goal
 
-Two related changes:
-1. Replace the hard-coded **Member Type** enum (`founding / executive / general`) with a manageable list so admins can add/edit types from the UI.
-2. Add **per-member fund subscriptions** so each member can be subscribed to one or more funds with an expected monthly amount — enabling member-wise due tracking per fund.
+1. Make Member Types, Funds, and Members fully manageable (delete + activate/deactivate).
+2. Allow a member to belong to **multiple member types**.
+3. Add edit and delete actions on Income and Expense entries.
 
 ---
 
-## 1. Member Types — manageable list
+## 1. Member Types page (`src/pages/MemberTypes.tsx`)
 
-### Database
-New table `member_types`:
-- `id uuid pk`
-- `name text unique not null` (e.g. "Founding", "Executive", "General", "Honorary"…)
-- `description text`
-- `is_active boolean default true`
-- `sort_order int default 0`
-- timestamps + `updated_at` trigger
-- RLS: admins manage, authenticated read
+- Replace the single Power button with two actions:
+  - **Toggle Active/Inactive** (Power icon) — already exists, keep but confirm via AlertDialog.
+  - **Delete** (Trash icon) — opens AlertDialog. Blocks deletion if any member still references that type (checked client-side via the new `member_member_types` join), otherwise removes the row.
+- Inactive types are excluded from the multi-select in the Add Member dialog (but still shown in filters).
 
-Migrate `members.member_type`:
-- Add `member_type_id uuid` column referencing `member_types(id)`
-- Seed `member_types` with the existing three enum values
-- Backfill `member_type_id` from current enum values
-- Keep the old enum column for now (drop later) to avoid breaking other pages; new code reads `member_type_id`
+## 2. Funds page (`src/pages/Funds.tsx`)
 
-### UI
-- New page **`/member-types`** (`src/pages/MemberTypes.tsx`): CRUD list (name, description, active toggle, sort order) — same pattern as Funds page
-- Add link in `AppLayout` sidebar under Members
-- Update **Members page** Add/Edit dialog and filter dropdown to load types from `member_types` table instead of the hard-coded list
+- Add to each row, next to Edit:
+  - **Toggle Active/Inactive** (Power icon, AlertDialog confirm) — flips `is_active`.
+  - **Delete** (Trash icon, AlertDialog confirm) — blocks if any transaction, expense, or subscription references the fund; otherwise deletes.
 
----
+## 3. Members page — multi-type support
 
-## 2. Member ↔ Fund subscriptions (member-wise dues)
+### Database changes (migration)
 
-### Database
-New table `member_fund_subscriptions`:
-- `id uuid pk`
-- `member_id uuid not null` → members.id
-- `fund_id uuid not null` → funds.id
-- `monthly_amount numeric not null default 0` (expected per-month contribution to this fund)
-- `start_date date not null default current_date`
-- `end_date date null` (null = ongoing)
-- `is_active boolean default true`
-- timestamps, `updated_at` trigger
-- unique `(member_id, fund_id)` while active
-- RLS: admins manage
+- New join table `member_member_types`:
+  - `member_id uuid not null`
+  - `member_type_id uuid not null`
+  - composite primary key `(member_id, member_type_id)`
+  - `created_at timestamptz default now()`
+  - RLS: admins manage; authenticated read.
+- Backfill: for every existing `members.member_type_id` that is not null, insert one row into `member_member_types`.
+- Keep `members.member_type_id` column for now (deprecated; UI stops writing to it). No drop in this pass.
+- Also add **delete** support for members: no schema change needed (RLS already allows admin delete).
 
-### UI
-- On the Members page, add a **"Funds"** action button per row → opens a dialog listing all active funds with checkboxes + monthly amount input + start date, persisting to `member_fund_subscriptions`
-- New page **`/dues`** (`src/pages/Dues.tsx`):
-  - Filter by member and/or fund and month range
-  - For each (member, fund) subscription:
-    - **Expected** = months between `start_date` (or filter start) and selected end month × `monthly_amount`
-    - **Paid** = sum of `transactions.amount` where `member_id` and `fund_id` match in that range
-    - **Due** = Expected − Paid (highlight if > 0)
-  - Totals row per member and grand total
-- Sidebar link "Dues"
+### UI changes (`src/pages/Members.tsx`)
 
-### Income page tweak (small)
-When a member is selected, default the fund dropdown to one of their active subscriptions and pre-fill `amount` with the subscription's `monthly_amount` (falls back to existing `members.monthly_fee` behavior if no subscription).
+- Replace the single-select Member type `<Select>` in the Add/Edit dialog with a **multi-select** built from a `Popover` + checkbox list of active types (chips render selected types above the trigger).
+- Load and save selections through the join table:
+  - On open-edit: fetch `member_member_types` for that member, prefill selected ids.
+  - On submit: upsert members row (without `member_type_id`), then diff & apply inserts/deletes on `member_member_types`.
+- Members list shows all assigned types as small `Badge`s in the Type column.
+- Type filter dropdown still single-select; a member matches if **any** of its types equals the filter.
+- Add a third row action: **Delete** (Trash icon, AlertDialog confirm). Cascades cleanup of `member_member_types` rows for that member; subscriptions are left untouched (with a warning if any exist) — actually for safety, delete is blocked if the member has transactions; otherwise proceed and remove join rows + member.
+
+## 4. Income page (`src/pages/Income.tsx`)
+
+- Convert the existing create flow into create/edit:
+  - Per row: **Edit** (Pencil) and **Delete** (Trash) buttons.
+  - Edit reopens the dialog prefilled; submit performs `update` instead of `insert`. The "Issue receipt" switch is hidden on edit (existing receipt is preserved; amount changes update the linked receipt's amount).
+  - Delete (AlertDialog confirm) removes the transaction and any linked receipt row.
+
+## 5. Expenses page (`src/pages/Expenses.tsx`)
+
+- Same pattern: per row **Edit** and **Delete** with AlertDialog confirm. Dialog reused for both modes.
 
 ---
 
-## Files
+## Technical notes
 
-**Created**
-- `supabase/migrations/<ts>_member_types_and_subscriptions.sql`
-- `src/pages/MemberTypes.tsx`
-- `src/pages/Dues.tsx`
-- `src/components/MemberSubscriptionsDialog.tsx`
+- Multi-select UI: lightweight implementation using `Popover` + `Command` (already in shadcn set) or simply a `Popover` with a list of `Checkbox` rows + a chip area — second option is simpler and avoids new deps.
+- All destructive actions go through `AlertDialog` for confirmation.
+- Fund and member-type delete handlers run a pre-check query (`count` on referencing tables) and surface a friendly toast when blocked.
+- After the migration runs, `src/integrations/supabase/types.ts` regenerates automatically and gives typed access to `member_member_types`.
 
-**Edited**
-- `src/pages/Members.tsx` — load types from DB, add "Funds" action button
-- `src/pages/Income.tsx` — auto-fill from subscription when available
-- `src/components/AppLayout.tsx` — add "Member Types" and "Dues" nav links
-- `src/App.tsx` — add `/member-types` and `/dues` routes
+## Files touched
 
----
-
-## Notes / assumptions
-
-- Keeping the existing `member_type` enum column during this change (deprecated, not displayed). A follow-up can drop it once we confirm nothing else reads it.
-- `monthly_fee` on `members` becomes informational only; dues are calculated from `member_fund_subscriptions`. We won't remove the column.
-- Dues math is simple "months × amount"; partial months count as a full month from `start_date`. Good enough for a foundation; can refine later.
+- `supabase/migrations/<new>.sql` — create `member_member_types`, RLS, backfill.
+- `src/pages/MemberTypes.tsx` — add delete action.
+- `src/pages/Funds.tsx` — add toggle + delete actions.
+- `src/pages/Members.tsx` — multi-type select, delete action, multi-type display.
+- `src/pages/Income.tsx` — edit + delete actions, reused dialog.
+- `src/pages/Expenses.tsx` — edit + delete actions, reused dialog.
