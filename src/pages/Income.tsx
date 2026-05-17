@@ -22,7 +22,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Search, Receipt } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Receipt, Pencil, Trash2 } from "lucide-react";
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
 import type { Database } from "@/integrations/supabase/types";
 
