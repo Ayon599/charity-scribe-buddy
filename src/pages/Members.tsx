@@ -95,7 +95,11 @@ export default function Members() {
   const [submitting, setSubmitting] = useState(false);
 
   const [toggleTarget, setToggleTarget] = useState<Member | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [subsTarget, setSubsTarget] = useState<Member | null>(null);
+
+  const [memberTypeIds, setMemberTypeIds] = useState<Map<string, Set<string>>>(new Map());
+  const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     document.title = "Members | Prottoy Foundation";
@@ -104,14 +108,21 @@ export default function Members() {
 
   async function fetchAll() {
     setLoading(true);
-    const [mRes, tRes] = await Promise.all([
+    const [mRes, tRes, linkRes] = await Promise.all([
       supabase.from("members").select("*").order("member_no", { ascending: true }),
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
+      supabase.from("member_member_types").select("member_id, member_type_id"),
     ]);
     if (mRes.error) toast({ title: "Failed to load members", description: mRes.error.message, variant: "destructive" });
     else setMembers(mRes.data ?? []);
     if (tRes.error) toast({ title: "Failed to load types", description: tRes.error.message, variant: "destructive" });
     else setTypes((tRes.data ?? []) as MemberType[]);
+    const map = new Map<string, Set<string>>();
+    for (const r of linkRes.data ?? []) {
+      if (!map.has(r.member_id)) map.set(r.member_id, new Set());
+      map.get(r.member_id)!.add(r.member_type_id);
+    }
+    setMemberTypeIds(map);
     setLoading(false);
   }
 
@@ -121,7 +132,10 @@ export default function Members() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return members.filter((m) => {
-      if (typeFilter !== "all" && m.member_type_id !== typeFilter) return false;
+      if (typeFilter !== "all") {
+        const set = memberTypeIds.get(m.id);
+        if (!set || !set.has(typeFilter)) return false;
+      }
       if (statusFilter === "active" && !m.is_active) return false;
       if (statusFilter === "inactive" && m.is_active) return false;
       if (!q) return true;
@@ -132,11 +146,12 @@ export default function Members() {
         String(m.member_no).includes(q)
       );
     });
-  }, [members, search, typeFilter, statusFilter]);
+  }, [members, search, typeFilter, statusFilter, memberTypeIds]);
 
   function openCreate() {
     setEditing(null);
-    setForm({ ...emptyForm, member_type_id: activeTypes[0]?.id ?? null });
+    setForm(emptyForm);
+    setSelectedTypeIds(new Set(activeTypes[0] ? [activeTypes[0].id] : []));
     setDialogOpen(true);
   }
 
@@ -147,12 +162,35 @@ export default function Members() {
       email: m.email ?? "",
       mobile: m.mobile ?? "",
       address: m.address ?? "",
-      member_type_id: m.member_type_id ?? null,
       monthly_fee: Number(m.monthly_fee ?? 0),
       joining_date: m.joining_date,
       notes: m.notes ?? "",
     });
+    setSelectedTypeIds(new Set(memberTypeIds.get(m.id) ?? []));
     setDialogOpen(true);
+  }
+
+  function toggleSelectedType(id: string) {
+    setSelectedTypeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function syncMemberTypes(memberId: string, prevIds: Set<string>, nextIds: Set<string>) {
+    const toAdd = [...nextIds].filter((i) => !prevIds.has(i));
+    const toDel = [...prevIds].filter((i) => !nextIds.has(i));
+    if (toAdd.length) {
+      const { error } = await supabase.from("member_member_types")
+        .insert(toAdd.map((tid) => ({ member_id: memberId, member_type_id: tid })));
+      if (error) throw error;
+    }
+    if (toDel.length) {
+      const { error } = await supabase.from("member_member_types")
+        .delete().eq("member_id", memberId).in("member_type_id", toDel);
+      if (error) throw error;
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -169,21 +207,28 @@ export default function Members() {
       email: v.email || null,
       mobile: v.mobile || null,
       address: v.address || null,
-      member_type_id: v.member_type_id,
       monthly_fee: v.monthly_fee,
       joining_date: v.joining_date,
       notes: v.notes || null,
     };
 
-    const res = editing
-      ? await supabase.from("members").update(payload).eq("id", editing.id)
-      : await supabase.from("members").insert(payload);
-    if (res.error) {
-      toast({ title: editing ? "Update failed" : "Create failed", description: res.error.message, variant: "destructive" });
-    } else {
+    try {
+      let memberId = editing?.id;
+      if (editing) {
+        const { error } = await supabase.from("members").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("members").insert(payload).select("id").single();
+        if (error) throw error;
+        memberId = data!.id;
+      }
+      const prev = editing ? (memberTypeIds.get(editing.id) ?? new Set<string>()) : new Set<string>();
+      await syncMemberTypes(memberId!, prev, selectedTypeIds);
       toast({ title: editing ? "Member updated" : "Member added" });
       setDialogOpen(false);
       void fetchAll();
+    } catch (err: any) {
+      toast({ title: editing ? "Update failed" : "Create failed", description: err.message, variant: "destructive" });
     }
     setSubmitting(false);
   }
@@ -200,6 +245,22 @@ export default function Members() {
       void fetchAll();
     }
     setToggleTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { count } = await supabase.from("transactions")
+      .select("id", { count: "exact", head: true }).eq("member_id", deleteTarget.id);
+    if ((count ?? 0) > 0) {
+      toast({ title: "Cannot delete", description: `Member has ${count} transaction(s). Deactivate instead.`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    await supabase.from("member_fund_subscriptions").delete().eq("member_id", deleteTarget.id);
+    const { error } = await supabase.from("members").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Member deleted" }); void fetchAll(); }
+    setDeleteTarget(null);
   }
 
   return (
