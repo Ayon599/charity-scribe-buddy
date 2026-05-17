@@ -48,7 +48,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Power, Wallet } from "lucide-react";
+import { Plus, Search, Pencil, Power, Wallet, Trash2, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types";
 import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialog";
 
