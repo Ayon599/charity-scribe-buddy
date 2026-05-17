@@ -103,7 +103,21 @@ export default function Expenses() {
   const totals = useMemo(() => filtered.reduce((s, r) => s + Number(r.amount), 0), [filtered]);
 
   function openCreate() {
+    setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setDialogOpen(true);
+  }
+
+  function openEdit(r: Row) {
+    setEditing(r);
+    setForm({
+      fund_id: r.fund_id,
+      amount: Number(r.amount),
+      expense_date: r.expense_date,
+      category: r.category ?? "",
+      payee: r.payee ?? "",
+      description: r.description ?? "",
+    });
     setDialogOpen(true);
   }
 
@@ -116,22 +130,32 @@ export default function Expenses() {
     }
     setSubmitting(true);
     const v = parsed.data;
-    const { error } = await supabase.from("expenses").insert({
+    const payload = {
       fund_id: v.fund_id,
       amount: v.amount,
       expense_date: v.expense_date,
       category: v.category || null,
       payee: v.payee || null,
       description: v.description || null,
-      created_by: user?.id ?? null,
-    });
+    };
+    const { error } = editing
+      ? await supabase.from("expenses").update(payload).eq("id", editing.id)
+      : await supabase.from("expenses").insert({ ...payload, created_by: user?.id ?? null });
     if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
     else {
-      toast({ title: "Expense recorded" });
+      toast({ title: editing ? "Expense updated" : "Expense recorded" });
       setDialogOpen(false);
       load();
     }
     setSubmitting(false);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Expense deleted" }); load(); }
+    setDeleteTarget(null);
   }
 
   return (
