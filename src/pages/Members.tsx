@@ -345,9 +345,12 @@ export default function Members() {
                         {m.email && <div className="text-xs text-muted-foreground">{m.email}</div>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">
-                          {m.member_type_id ? typeMap.get(m.member_type_id) ?? "—" : "—"}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {[...(memberTypeIds.get(m.id) ?? [])].map((tid) => (
+                            <Badge key={tid} variant="secondary">{typeMap.get(tid) ?? "—"}</Badge>
+                          ))}
+                          {!memberTypeIds.get(m.id)?.size && <span className="text-muted-foreground">—</span>}
+                        </div>
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
