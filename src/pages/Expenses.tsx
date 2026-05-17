@@ -247,7 +247,7 @@ export default function Expenses() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record expense</DialogTitle>
+            <DialogTitle>{editing ? "Edit expense" : "Record expense"}</DialogTitle>
             <DialogDescription>Add an outflow against a specific fund.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
