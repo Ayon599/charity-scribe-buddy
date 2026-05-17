@@ -128,7 +128,24 @@ export default function Income() {
   );
 
   function openCreate() {
+    setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setDialogOpen(true);
+  }
+
+  function openEdit(r: Row) {
+    setEditing(r);
+    setForm({
+      fund_id: r.fund_id,
+      member_id: r.member_id ?? "",
+      donor_name: r.donor_name ?? "",
+      amount: Number(r.amount),
+      payment_method: r.payment_method as PaymentMethod,
+      txn_date: r.txn_date,
+      for_month: r.for_month ? String(r.for_month).slice(0, 7) : "",
+      description: r.description ?? "",
+      issue_receipt: false,
+    });
     setDialogOpen(true);
   }
 
@@ -164,29 +181,54 @@ export default function Income() {
       txn_date: v.txn_date,
       for_month: v.for_month ? `${v.for_month}-01` : null,
       description: v.description || null,
-      created_by: user?.id ?? null,
     };
-    const { data: ins, error } = await supabase.from("transactions").insert(payload).select("id").single();
-    if (error) {
-      toast({ title: "Save failed", description: error.message, variant: "destructive" });
-      setSubmitting(false);
-      return;
+
+    if (editing) {
+      const { error } = await supabase.from("transactions").update(payload).eq("id", editing.id);
+      if (error) {
+        toast({ title: "Update failed", description: error.message, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (editing.receipt && Number(editing.amount) !== v.amount) {
+        await supabase.from("receipts").update({ amount: v.amount }).eq("transaction_id", editing.id);
+      }
+      toast({ title: "Income updated" });
+    } else {
+      const { data: ins, error } = await supabase
+        .from("transactions")
+        .insert({ ...payload, created_by: user?.id ?? null })
+        .select("id").single();
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (v.issue_receipt && ins) {
+        const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
+        const { error: rerr } = await supabase.from("receipts").insert({
+          transaction_id: ins.id,
+          amount: v.amount,
+          issued_to: issuedTo,
+          issued_by: user?.id ?? null,
+          receipt_no: "",
+        });
+        if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
+      }
+      toast({ title: "Income recorded" });
     }
-    if (v.issue_receipt && ins) {
-      const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
-      const { error: rerr } = await supabase.from("receipts").insert({
-        transaction_id: ins.id,
-        amount: v.amount,
-        issued_to: issuedTo,
-        issued_by: user?.id ?? null,
-        receipt_no: "",
-      });
-      if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
-    }
-    toast({ title: "Income recorded" });
     setDialogOpen(false);
     setSubmitting(false);
     load();
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await supabase.from("receipts").delete().eq("transaction_id", deleteTarget.id);
+    const { error } = await supabase.from("transactions").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Income deleted" }); load(); }
+    setDeleteTarget(null);
   }
 
   return (
