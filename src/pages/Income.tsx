@@ -335,8 +335,8 @@ export default function Income() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Record income</DialogTitle>
-            <DialogDescription>Add a contribution or donation to a fund.</DialogDescription>
+            <DialogTitle>{editing ? "Edit income" : "Record income"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this transaction." : "Add a contribution or donation to a fund."}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
