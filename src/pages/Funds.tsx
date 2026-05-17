@@ -258,6 +258,38 @@ export default function Funds() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toggleTarget} onOpenChange={(o) => !o && setToggleTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{toggleTarget?.is_active ? "Deactivate fund?" : "Activate fund?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleTarget?.is_active
+                ? `"${toggleTarget?.name}" will be hidden from new income/expense entries.`
+                : `"${toggleTarget?.name}" will be available again.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggle}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete fund?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
