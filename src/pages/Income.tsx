@@ -409,24 +409,41 @@ export default function Income() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
 
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <Label>Issue receipt</Label>
-                <p className="text-xs text-muted-foreground">Auto-numbered as PF-YYYY-####</p>
+            {!editing && (
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label>Issue receipt</Label>
+                  <p className="text-xs text-muted-foreground">Auto-numbered as PF-YYYY-####</p>
+                </div>
+                <Switch checked={form.issue_receipt}
+                  onCheckedChange={(v) => setForm({ ...form, issue_receipt: v })} />
               </div>
-              <Switch checked={form.issue_receipt}
-                onCheckedChange={(v) => setForm({ ...form, issue_receipt: v })} />
-            </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Saving…" : "Record income"}
+                {submitting ? "Saving…" : editing ? "Save changes" : "Record income"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete income?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the transaction{deleteTarget?.receipt ? " and its receipt" : ""}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
