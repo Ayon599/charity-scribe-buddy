@@ -151,6 +151,39 @@ export type Database = {
           },
         ]
       }
+      member_member_types: {
+        Row: {
+          created_at: string
+          member_id: string
+          member_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          member_id: string
+          member_type_id: string
+        }
+        Update: {
+          created_at?: string
+          member_id?: string
+          member_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_member_types_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_member_types_member_type_id_fkey"
+            columns: ["member_type_id"]
+            isOneToOne: false
+            referencedRelation: "member_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_types: {
         Row: {
           created_at: string

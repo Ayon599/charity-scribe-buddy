@@ -18,7 +18,11 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Fund = Database["public"]["Tables"]["funds"]["Row"];
@@ -48,6 +52,36 @@ export default function Funds() {
   const [editing, setEditing] = useState<Fund | null>(null);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState<Fund | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Fund | null>(null);
+
+  async function confirmToggle() {
+    if (!toggleTarget) return;
+    const { error } = await supabase.from("funds")
+      .update({ is_active: !toggleTarget.is_active }).eq("id", toggleTarget.id);
+    if (error) toast({ title: "Action failed", description: error.message, variant: "destructive" });
+    else { toast({ title: toggleTarget.is_active ? "Fund deactivated" : "Fund activated" }); fetchFunds(); }
+    setToggleTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const [tx, ex, sub] = await Promise.all([
+      supabase.from("transactions").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+      supabase.from("expenses").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+      supabase.from("member_fund_subscriptions").select("id", { count: "exact", head: true }).eq("fund_id", deleteTarget.id),
+    ]);
+    const refs = (tx.count ?? 0) + (ex.count ?? 0) + (sub.count ?? 0);
+    if (refs > 0) {
+      toast({ title: "Cannot delete", description: `Fund is referenced by ${refs} record(s).`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    const { error } = await supabase.from("funds").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Fund deleted" }); fetchFunds(); }
+    setDeleteTarget(null);
+  }
 
   useEffect(() => {
     document.title = "Funds | Prottoy Foundation";
@@ -155,9 +189,17 @@ export default function Funds() {
                         {f.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(f)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(f)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title={f.is_active ? "Deactivate" : "Activate"} onClick={() => setToggleTarget(f)}>
+                            <Power className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(f)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -216,6 +258,38 @@ export default function Funds() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toggleTarget} onOpenChange={(o) => !o && setToggleTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{toggleTarget?.is_active ? "Deactivate fund?" : "Activate fund?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleTarget?.is_active
+                ? `"${toggleTarget?.name}" will be hidden from new income/expense entries.`
+                : `"${toggleTarget?.name}" will be available again.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggle}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete fund?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

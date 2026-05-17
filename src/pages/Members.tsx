@@ -48,21 +48,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, Pencil, Power, Wallet } from "lucide-react";
+import { Plus, Search, Pencil, Power, Wallet, Trash2, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types";
 import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialog";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
 type MemberType = { id: string; name: string; is_active: boolean; sort_order: number };
 
-const NONE = "__none__";
+
 
 const memberSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(100),
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
-  member_type_id: z.string().nullable(),
   monthly_fee: z.coerce.number().min(0).max(1_000_000),
   joining_date: z.string().min(1, "Joining date required"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
@@ -75,7 +76,6 @@ const emptyForm: FormValues = {
   email: "",
   mobile: "",
   address: "",
-  member_type_id: null,
   monthly_fee: 0,
   joining_date: new Date().toISOString().slice(0, 10),
   notes: "",
@@ -95,7 +95,11 @@ export default function Members() {
   const [submitting, setSubmitting] = useState(false);
 
   const [toggleTarget, setToggleTarget] = useState<Member | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [subsTarget, setSubsTarget] = useState<Member | null>(null);
+
+  const [memberTypeIds, setMemberTypeIds] = useState<Map<string, Set<string>>>(new Map());
+  const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     document.title = "Members | Prottoy Foundation";
@@ -104,14 +108,21 @@ export default function Members() {
 
   async function fetchAll() {
     setLoading(true);
-    const [mRes, tRes] = await Promise.all([
+    const [mRes, tRes, linkRes] = await Promise.all([
       supabase.from("members").select("*").order("member_no", { ascending: true }),
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
+      supabase.from("member_member_types").select("member_id, member_type_id"),
     ]);
     if (mRes.error) toast({ title: "Failed to load members", description: mRes.error.message, variant: "destructive" });
     else setMembers(mRes.data ?? []);
     if (tRes.error) toast({ title: "Failed to load types", description: tRes.error.message, variant: "destructive" });
     else setTypes((tRes.data ?? []) as MemberType[]);
+    const map = new Map<string, Set<string>>();
+    for (const r of linkRes.data ?? []) {
+      if (!map.has(r.member_id)) map.set(r.member_id, new Set());
+      map.get(r.member_id)!.add(r.member_type_id);
+    }
+    setMemberTypeIds(map);
     setLoading(false);
   }
 
@@ -121,7 +132,10 @@ export default function Members() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return members.filter((m) => {
-      if (typeFilter !== "all" && m.member_type_id !== typeFilter) return false;
+      if (typeFilter !== "all") {
+        const set = memberTypeIds.get(m.id);
+        if (!set || !set.has(typeFilter)) return false;
+      }
       if (statusFilter === "active" && !m.is_active) return false;
       if (statusFilter === "inactive" && m.is_active) return false;
       if (!q) return true;
@@ -132,11 +146,12 @@ export default function Members() {
         String(m.member_no).includes(q)
       );
     });
-  }, [members, search, typeFilter, statusFilter]);
+  }, [members, search, typeFilter, statusFilter, memberTypeIds]);
 
   function openCreate() {
     setEditing(null);
-    setForm({ ...emptyForm, member_type_id: activeTypes[0]?.id ?? null });
+    setForm(emptyForm);
+    setSelectedTypeIds(new Set(activeTypes[0] ? [activeTypes[0].id] : []));
     setDialogOpen(true);
   }
 
@@ -147,12 +162,35 @@ export default function Members() {
       email: m.email ?? "",
       mobile: m.mobile ?? "",
       address: m.address ?? "",
-      member_type_id: m.member_type_id ?? null,
       monthly_fee: Number(m.monthly_fee ?? 0),
       joining_date: m.joining_date,
       notes: m.notes ?? "",
     });
+    setSelectedTypeIds(new Set(memberTypeIds.get(m.id) ?? []));
     setDialogOpen(true);
+  }
+
+  function toggleSelectedType(id: string) {
+    setSelectedTypeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function syncMemberTypes(memberId: string, prevIds: Set<string>, nextIds: Set<string>) {
+    const toAdd = [...nextIds].filter((i) => !prevIds.has(i));
+    const toDel = [...prevIds].filter((i) => !nextIds.has(i));
+    if (toAdd.length) {
+      const { error } = await supabase.from("member_member_types")
+        .insert(toAdd.map((tid) => ({ member_id: memberId, member_type_id: tid })));
+      if (error) throw error;
+    }
+    if (toDel.length) {
+      const { error } = await supabase.from("member_member_types")
+        .delete().eq("member_id", memberId).in("member_type_id", toDel);
+      if (error) throw error;
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -169,21 +207,28 @@ export default function Members() {
       email: v.email || null,
       mobile: v.mobile || null,
       address: v.address || null,
-      member_type_id: v.member_type_id,
       monthly_fee: v.monthly_fee,
       joining_date: v.joining_date,
       notes: v.notes || null,
     };
 
-    const res = editing
-      ? await supabase.from("members").update(payload).eq("id", editing.id)
-      : await supabase.from("members").insert(payload);
-    if (res.error) {
-      toast({ title: editing ? "Update failed" : "Create failed", description: res.error.message, variant: "destructive" });
-    } else {
+    try {
+      let memberId = editing?.id;
+      if (editing) {
+        const { error } = await supabase.from("members").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("members").insert(payload).select("id").single();
+        if (error) throw error;
+        memberId = data!.id;
+      }
+      const prev = editing ? (memberTypeIds.get(editing.id) ?? new Set<string>()) : new Set<string>();
+      await syncMemberTypes(memberId!, prev, selectedTypeIds);
       toast({ title: editing ? "Member updated" : "Member added" });
       setDialogOpen(false);
       void fetchAll();
+    } catch (err: any) {
+      toast({ title: editing ? "Update failed" : "Create failed", description: err.message, variant: "destructive" });
     }
     setSubmitting(false);
   }
@@ -200,6 +245,22 @@ export default function Members() {
       void fetchAll();
     }
     setToggleTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { count } = await supabase.from("transactions")
+      .select("id", { count: "exact", head: true }).eq("member_id", deleteTarget.id);
+    if ((count ?? 0) > 0) {
+      toast({ title: "Cannot delete", description: `Member has ${count} transaction(s). Deactivate instead.`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    await supabase.from("member_fund_subscriptions").delete().eq("member_id", deleteTarget.id);
+    const { error } = await supabase.from("members").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Member deleted" }); void fetchAll(); }
+    setDeleteTarget(null);
   }
 
   return (
@@ -284,9 +345,12 @@ export default function Members() {
                         {m.email && <div className="text-xs text-muted-foreground">{m.email}</div>}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">
-                          {m.member_type_id ? typeMap.get(m.member_type_id) ?? "—" : "—"}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {[...(memberTypeIds.get(m.id) ?? [])].map((tid) => (
+                            <Badge key={tid} variant="secondary">{typeMap.get(tid) ?? "—"}</Badge>
+                          ))}
+                          {!memberTypeIds.get(m.id)?.size && <span className="text-muted-foreground">—</span>}
+                        </div>
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
@@ -306,6 +370,9 @@ export default function Members() {
                           </Button>
                           <Button variant="ghost" size="icon" title="Toggle active" onClick={() => setToggleTarget(m)}>
                             <Power className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(m)}>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -359,19 +426,42 @@ export default function Members() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
-                <Label>Member type</Label>
-                <Select
-                  value={form.member_type_id ?? NONE}
-                  onValueChange={(v) => setForm({ ...form, member_type_id: v === NONE ? null : v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>— None —</SelectItem>
-                    {activeTypes.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                <Label>Member types</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="justify-between font-normal">
+                      <span className="truncate text-left">
+                        {selectedTypeIds.size === 0
+                          ? "Select types"
+                          : [...selectedTypeIds].map((id) => typeMap.get(id) ?? "?").join(", ")}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="start">
+                    <div className="max-h-64 overflow-auto space-y-1">
+                      {activeTypes.length === 0 && (
+                        <p className="text-xs text-muted-foreground p-2">No active types. Create one first.</p>
+                      )}
+                      {activeTypes.map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-accent cursor-pointer">
+                          <Checkbox
+                            checked={selectedTypeIds.has(t.id)}
+                            onCheckedChange={() => toggleSelectedType(t.id)}
+                          />
+                          <span className="text-sm">{t.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {selectedTypeIds.size > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {[...selectedTypeIds].map((id) => (
+                      <Badge key={id} variant="secondary">{typeMap.get(id) ?? "?"}</Badge>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="monthly_fee">Monthly fee (৳) *</Label>
@@ -440,6 +530,21 @@ export default function Members() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmToggle}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete member?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete {deleteTarget?.full_name}. Members with recorded transactions cannot be deleted — deactivate them instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

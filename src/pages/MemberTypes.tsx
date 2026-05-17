@@ -13,7 +13,11 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Power } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 
 type MemberTypeRow = {
   id: string;
@@ -39,6 +43,24 @@ export default function MemberTypes() {
   const [editing, setEditing] = useState<MemberTypeRow | null>(null);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MemberTypeRow | null>(null);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { count } = await supabase
+      .from("member_member_types")
+      .select("member_id", { count: "exact", head: true })
+      .eq("member_type_id", deleteTarget.id);
+    if ((count ?? 0) > 0) {
+      toast({ title: "Cannot delete", description: `${count} member(s) still use this type.`, variant: "destructive" });
+      setDeleteTarget(null);
+      return;
+    }
+    const { error } = await supabase.from("member_types").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Type deleted" }); fetchRows(); }
+    setDeleteTarget(null);
+  }
 
   useEffect(() => {
     document.title = "Member Types | Prottoy Foundation";
@@ -141,7 +163,8 @@ export default function MemberTypes() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => toggleActive(r)}><Power className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" title={r.is_active ? "Deactivate" : "Activate"} onClick={() => toggleActive(r)}><Power className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(r)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -179,6 +202,21 @@ export default function MemberTypes() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes "{deleteTarget?.name}". Members currently using it will block the delete.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

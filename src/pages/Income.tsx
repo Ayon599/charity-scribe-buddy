@@ -22,7 +22,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Search, Receipt } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Receipt, Pencil, Trash2 } from "lucide-react";
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -73,6 +77,8 @@ export default function Income() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
 
   useEffect(() => {
     document.title = "Income | Prottoy Foundation";
@@ -122,7 +128,24 @@ export default function Income() {
   );
 
   function openCreate() {
+    setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setDialogOpen(true);
+  }
+
+  function openEdit(r: Row) {
+    setEditing(r);
+    setForm({
+      fund_id: r.fund_id,
+      member_id: r.member_id ?? "",
+      donor_name: r.donor_name ?? "",
+      amount: Number(r.amount),
+      payment_method: r.payment_method as PaymentMethod,
+      txn_date: r.txn_date,
+      for_month: r.for_month ? String(r.for_month).slice(0, 7) : "",
+      description: r.description ?? "",
+      issue_receipt: false,
+    });
     setDialogOpen(true);
   }
 
@@ -158,29 +181,54 @@ export default function Income() {
       txn_date: v.txn_date,
       for_month: v.for_month ? `${v.for_month}-01` : null,
       description: v.description || null,
-      created_by: user?.id ?? null,
     };
-    const { data: ins, error } = await supabase.from("transactions").insert(payload).select("id").single();
-    if (error) {
-      toast({ title: "Save failed", description: error.message, variant: "destructive" });
-      setSubmitting(false);
-      return;
+
+    if (editing) {
+      const { error } = await supabase.from("transactions").update(payload).eq("id", editing.id);
+      if (error) {
+        toast({ title: "Update failed", description: error.message, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (editing.receipt && Number(editing.amount) !== v.amount) {
+        await supabase.from("receipts").update({ amount: v.amount }).eq("transaction_id", editing.id);
+      }
+      toast({ title: "Income updated" });
+    } else {
+      const { data: ins, error } = await supabase
+        .from("transactions")
+        .insert({ ...payload, created_by: user?.id ?? null })
+        .select("id").single();
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (v.issue_receipt && ins) {
+        const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
+        const { error: rerr } = await supabase.from("receipts").insert({
+          transaction_id: ins.id,
+          amount: v.amount,
+          issued_to: issuedTo,
+          issued_by: user?.id ?? null,
+          receipt_no: "",
+        });
+        if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
+      }
+      toast({ title: "Income recorded" });
     }
-    if (v.issue_receipt && ins) {
-      const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
-      const { error: rerr } = await supabase.from("receipts").insert({
-        transaction_id: ins.id,
-        amount: v.amount,
-        issued_to: issuedTo,
-        issued_by: user?.id ?? null,
-        receipt_no: "",
-      });
-      if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
-    }
-    toast({ title: "Income recorded" });
     setDialogOpen(false);
     setSubmitting(false);
     load();
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await supabase.from("receipts").delete().eq("transaction_id", deleteTarget.id);
+    const { error } = await supabase.from("transactions").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Income deleted" }); load(); }
+    setDeleteTarget(null);
   }
 
   return (
@@ -231,12 +279,13 @@ export default function Income() {
                     <TableHead>Fund</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No income recorded.
                       </TableCell>
                     </TableRow>
@@ -264,6 +313,16 @@ export default function Income() {
                         <Badge variant="outline">{PAYMENT_LABEL[r.payment_method as PaymentMethod]}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(r)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -276,8 +335,8 @@ export default function Income() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Record income</DialogTitle>
-            <DialogDescription>Add a contribution or donation to a fund.</DialogDescription>
+            <DialogTitle>{editing ? "Edit income" : "Record income"}</DialogTitle>
+            <DialogDescription>{editing ? "Update this transaction." : "Add a contribution or donation to a fund."}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -350,24 +409,41 @@ export default function Income() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
 
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <Label>Issue receipt</Label>
-                <p className="text-xs text-muted-foreground">Auto-numbered as PF-YYYY-####</p>
+            {!editing && (
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <Label>Issue receipt</Label>
+                  <p className="text-xs text-muted-foreground">Auto-numbered as PF-YYYY-####</p>
+                </div>
+                <Switch checked={form.issue_receipt}
+                  onCheckedChange={(v) => setForm({ ...form, issue_receipt: v })} />
               </div>
-              <Switch checked={form.issue_receipt}
-                onCheckedChange={(v) => setForm({ ...form, issue_receipt: v })} />
-            </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Saving…" : "Record income"}
+                {submitting ? "Saving…" : editing ? "Save changes" : "Record income"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete income?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the transaction{deleteTarget?.receipt ? " and its receipt" : ""}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

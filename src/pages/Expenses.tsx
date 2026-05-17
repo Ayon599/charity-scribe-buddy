@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Search } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { formatBDT } from "@/lib/format";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -61,6 +65,8 @@ export default function Expenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
@@ -97,7 +103,21 @@ export default function Expenses() {
   const totals = useMemo(() => filtered.reduce((s, r) => s + Number(r.amount), 0), [filtered]);
 
   function openCreate() {
+    setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setDialogOpen(true);
+  }
+
+  function openEdit(r: Row) {
+    setEditing(r);
+    setForm({
+      fund_id: r.fund_id,
+      amount: Number(r.amount),
+      expense_date: r.expense_date,
+      category: r.category ?? "",
+      payee: r.payee ?? "",
+      description: r.description ?? "",
+    });
     setDialogOpen(true);
   }
 
@@ -110,22 +130,32 @@ export default function Expenses() {
     }
     setSubmitting(true);
     const v = parsed.data;
-    const { error } = await supabase.from("expenses").insert({
+    const payload = {
       fund_id: v.fund_id,
       amount: v.amount,
       expense_date: v.expense_date,
       category: v.category || null,
       payee: v.payee || null,
       description: v.description || null,
-      created_by: user?.id ?? null,
-    });
+    };
+    const { error } = editing
+      ? await supabase.from("expenses").update(payload).eq("id", editing.id)
+      : await supabase.from("expenses").insert({ ...payload, created_by: user?.id ?? null });
     if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
     else {
-      toast({ title: "Expense recorded" });
+      toast({ title: editing ? "Expense updated" : "Expense recorded" });
       setDialogOpen(false);
       load();
     }
     setSubmitting(false);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
+    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    else { toast({ title: "Expense deleted" }); load(); }
+    setDeleteTarget(null);
   }
 
   return (
@@ -174,12 +204,13 @@ export default function Expenses() {
                     <TableHead>Payee</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No expenses recorded.
                       </TableCell>
                     </TableRow>
@@ -194,6 +225,16 @@ export default function Expenses() {
                         {r.description ?? "—"}
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(r)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -206,7 +247,7 @@ export default function Expenses() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record expense</DialogTitle>
+            <DialogTitle>{editing ? "Edit expense" : "Record expense"}</DialogTitle>
             <DialogDescription>Add an outflow against a specific fund.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -252,12 +293,27 @@ export default function Expenses() {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Saving…" : "Record expense"}
+                {submitting ? "Saving…" : editing ? "Save changes" : "Record expense"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the expense entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
