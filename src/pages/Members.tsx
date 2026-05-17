@@ -371,6 +371,9 @@ export default function Members() {
                           <Button variant="ghost" size="icon" title="Toggle active" onClick={() => setToggleTarget(m)}>
                             <Power className="h-4 w-4" />
                           </Button>
+                          <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeleteTarget(m)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
