@@ -57,7 +57,7 @@ import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialo
 type Member = Database["public"]["Tables"]["members"]["Row"];
 type MemberType = { id: string; name: string; is_active: boolean; sort_order: number };
 
-const NONE = "__none__";
+
 
 const memberSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(100),
