@@ -137,6 +137,20 @@ export default function Expenses() {
     }
     setSubmitting(true);
     const v = parsed.data;
+    let attachment_url: string | null = existingAttachment;
+    try {
+      if (attachmentFile) {
+        if (editing?.attachment_url) await deleteAttachment(editing.attachment_url);
+        attachment_url = await uploadAttachment(attachmentFile, "expense");
+      } else if (editing && !existingAttachment && editing.attachment_url) {
+        await deleteAttachment(editing.attachment_url);
+        attachment_url = null;
+      }
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
     const payload = {
       fund_id: v.fund_id,
       amount: v.amount,
@@ -144,6 +158,7 @@ export default function Expenses() {
       category: v.category || null,
       payee: v.payee || null,
       description: v.description || null,
+      attachment_url,
     };
     const { error } = editing
       ? await supabase.from("expenses").update(payload).eq("id", editing.id)
@@ -159,6 +174,7 @@ export default function Expenses() {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
+    if (deleteTarget.attachment_url) await deleteAttachment(deleteTarget.attachment_url);
     const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
     if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     else { toast({ title: "Expense deleted" }); load(); }
