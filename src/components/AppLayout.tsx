@@ -8,7 +8,6 @@ import {
   Wallet,
   ArrowDownCircle,
   ArrowUpCircle,
-  FileText,
   LogOut,
   Tags,
   Receipt,
