@@ -301,6 +301,7 @@ export default function Income() {
                     <TableHead>Donor / Member</TableHead>
                     <TableHead>Fund</TableHead>
                     <TableHead>Method</TableHead>
+                    <TableHead>Attachment</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -308,7 +309,7 @@ export default function Income() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                         No income recorded.
                       </TableCell>
                     </TableRow>
@@ -334,6 +335,13 @@ export default function Income() {
                       <TableCell>{r.fund?.name ?? "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{PAYMENT_LABEL[r.payment_method as PaymentMethod]}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {r.attachment_url ? (
+                          <a href={r.attachment_url} target="_blank" rel="noreferrer" title="View attachment">
+                            <img src={r.attachment_url} alt="" className="h-10 w-10 rounded border object-cover" />
+                          </a>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
                       <TableCell className="text-right">
@@ -430,6 +438,25 @@ export default function Income() {
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" rows={2} value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="inc_attachment">Attachment (image, optional)</Label>
+              <Input id="inc_attachment" type="file" accept="image/*"
+                onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)} />
+              {(attachmentFile || existingAttachment) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Paperclip className="h-3 w-3" />
+                  <span className="truncate">{attachmentFile ? attachmentFile.name : "Current attachment"}</span>
+                  {existingAttachment && !attachmentFile && (
+                    <a href={existingAttachment} target="_blank" rel="noreferrer" className="underline">View</a>
+                  )}
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6"
+                    onClick={() => { setAttachmentFile(null); setExistingAttachment(null); }}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {!editing && (
