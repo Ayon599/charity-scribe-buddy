@@ -24,8 +24,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT } from "@/lib/format";
+import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import type { Database } from "@/integrations/supabase/types";
 
 type Expense = Database["public"]["Tables"]["expenses"]["Row"];
@@ -67,6 +68,8 @@ export default function Expenses() {
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [existingAttachment, setExistingAttachment] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
@@ -105,6 +108,8 @@ export default function Expenses() {
   function openCreate() {
     setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setAttachmentFile(null);
+    setExistingAttachment(null);
     setDialogOpen(true);
   }
 
@@ -118,6 +123,8 @@ export default function Expenses() {
       payee: r.payee ?? "",
       description: r.description ?? "",
     });
+    setAttachmentFile(null);
+    setExistingAttachment(r.attachment_url ?? null);
     setDialogOpen(true);
   }
 
@@ -130,6 +137,20 @@ export default function Expenses() {
     }
     setSubmitting(true);
     const v = parsed.data;
+    let attachment_url: string | null = existingAttachment;
+    try {
+      if (attachmentFile) {
+        if (editing?.attachment_url) await deleteAttachment(editing.attachment_url);
+        attachment_url = await uploadAttachment(attachmentFile, "expense");
+      } else if (editing && !existingAttachment && editing.attachment_url) {
+        await deleteAttachment(editing.attachment_url);
+        attachment_url = null;
+      }
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
     const payload = {
       fund_id: v.fund_id,
       amount: v.amount,
@@ -137,6 +158,7 @@ export default function Expenses() {
       category: v.category || null,
       payee: v.payee || null,
       description: v.description || null,
+      attachment_url,
     };
     const { error } = editing
       ? await supabase.from("expenses").update(payload).eq("id", editing.id)
@@ -152,6 +174,7 @@ export default function Expenses() {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
+    if (deleteTarget.attachment_url) await deleteAttachment(deleteTarget.attachment_url);
     const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
     if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
     else { toast({ title: "Expense deleted" }); load(); }
@@ -203,6 +226,7 @@ export default function Expenses() {
                     <TableHead>Category</TableHead>
                     <TableHead>Payee</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Attachment</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -210,7 +234,7 @@ export default function Expenses() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                         No expenses recorded.
                       </TableCell>
                     </TableRow>
@@ -223,6 +247,13 @@ export default function Expenses() {
                       <TableCell>{r.payee ?? "—"}</TableCell>
                       <TableCell className="max-w-xs truncate text-muted-foreground text-sm">
                         {r.description ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {r.attachment_url ? (
+                          <a href={r.attachment_url} target="_blank" rel="noreferrer" title="View attachment">
+                            <img src={r.attachment_url} alt="" className="h-10 w-10 rounded border object-cover" />
+                          </a>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
                       <TableCell className="text-right">
@@ -289,6 +320,24 @@ export default function Expenses() {
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" rows={2} value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="exp_attachment">Attachment (image, optional)</Label>
+              <Input id="exp_attachment" type="file" accept="image/*"
+                onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)} />
+              {(attachmentFile || existingAttachment) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Paperclip className="h-3 w-3" />
+                  <span className="truncate">{attachmentFile ? attachmentFile.name : "Current attachment"}</span>
+                  {existingAttachment && !attachmentFile && (
+                    <a href={existingAttachment} target="_blank" rel="noreferrer" className="underline">View</a>
+                  )}
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6"
+                    onClick={() => { setAttachmentFile(null); setExistingAttachment(null); }}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

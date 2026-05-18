@@ -1,0 +1,32 @@
+import { supabase } from "@/integrations/supabase/client";
+
+const BUCKET = "transaction-attachments";
+const MAX_BYTES = 5 * 1024 * 1024;
+
+export async function uploadAttachment(file: File, folder: "income" | "expense"): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Only image files are allowed");
+  if (file.size > MAX_BYTES) throw new Error("Image must be 5 MB or smaller");
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export function attachmentPathFromUrl(url: string): string | null {
+  const marker = `/${BUCKET}/`;
+  const i = url.indexOf(marker);
+  if (i === -1) return null;
+  return url.substring(i + marker.length);
+}
+
+export async function deleteAttachment(url: string) {
+  const path = attachmentPathFromUrl(url);
+  if (!path) return;
+  await supabase.storage.from(BUCKET).remove([path]);
+}

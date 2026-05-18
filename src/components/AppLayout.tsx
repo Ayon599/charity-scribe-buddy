@@ -8,7 +8,6 @@ import {
   Wallet,
   ArrowDownCircle,
   ArrowUpCircle,
-  FileText,
   LogOut,
   Tags,
   Receipt,
@@ -23,7 +22,6 @@ const navItems = [
   { to: "/income", label: "Income", icon: ArrowDownCircle },
   { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
   { to: "/dues", label: "Dues", icon: Receipt },
-  { to: "/reports", label: "Reports", icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
