@@ -24,8 +24,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT } from "@/lib/format";
+import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import type { Database } from "@/integrations/supabase/types";
 
 type Expense = Database["public"]["Tables"]["expenses"]["Row"];
@@ -67,6 +68,8 @@ export default function Expenses() {
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [existingAttachment, setExistingAttachment] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
@@ -105,6 +108,8 @@ export default function Expenses() {
   function openCreate() {
     setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setAttachmentFile(null);
+    setExistingAttachment(null);
     setDialogOpen(true);
   }
 
@@ -118,6 +123,8 @@ export default function Expenses() {
       payee: r.payee ?? "",
       description: r.description ?? "",
     });
+    setAttachmentFile(null);
+    setExistingAttachment(r.attachment_url ?? null);
     setDialogOpen(true);
   }
 
