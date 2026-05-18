@@ -338,6 +338,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          attachment_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -352,6 +353,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          attachment_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -366,6 +368,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          attachment_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
