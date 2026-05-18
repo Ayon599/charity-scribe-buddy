@@ -26,8 +26,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Receipt, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Receipt, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
+import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import type { Database } from "@/integrations/supabase/types";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
@@ -79,6 +80,8 @@ export default function Income() {
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [existingAttachment, setExistingAttachment] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Income | Prottoy Foundation";
@@ -130,6 +133,8 @@ export default function Income() {
   function openCreate() {
     setEditing(null);
     setForm({ ...empty, fund_id: funds[0]?.id ?? "" });
+    setAttachmentFile(null);
+    setExistingAttachment(null);
     setDialogOpen(true);
   }
 
@@ -146,6 +151,8 @@ export default function Income() {
       description: r.description ?? "",
       issue_receipt: false,
     });
+    setAttachmentFile(null);
+    setExistingAttachment(r.attachment_url ?? null);
     setDialogOpen(true);
   }
 
