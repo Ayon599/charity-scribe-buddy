@@ -12,7 +12,6 @@ import {
   LogOut,
   Tags,
   Receipt,
-  FileText as _FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
