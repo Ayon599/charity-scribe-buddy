@@ -12,6 +12,7 @@ import {
   LogOut,
   Tags,
   Receipt,
+  FileText as _FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,6 @@ const navItems = [
   { to: "/income", label: "Income", icon: ArrowDownCircle },
   { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
   { to: "/dues", label: "Dues", icon: Receipt },
-  { to: "/reports", label: "Reports", icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
