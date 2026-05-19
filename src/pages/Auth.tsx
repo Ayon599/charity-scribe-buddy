@@ -15,10 +15,6 @@ const signInSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
 });
 
-const signUpSchema = signInSchema.extend({
-  fullName: z.string().trim().min(1, "Name is required").max(100),
-});
-
 export default function AuthPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -26,9 +22,6 @@ export default function AuthPage() {
 
   const [siEmail, setSiEmail] = useState("");
   const [siPassword, setSiPassword] = useState("");
-  const [suName, setSuName] = useState("");
-  const [suEmail, setSuEmail] = useState("");
-  const [suPassword, setSuPassword] = useState("");
 
   useEffect(() => {
     if (!loading && user) navigate("/", { replace: true });
@@ -64,42 +57,6 @@ export default function AuthPage() {
     navigate("/", { replace: true });
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = signUpSchema.safeParse({
-      fullName: suName,
-      email: suEmail,
-      password: suPassword,
-    });
-    if (!parsed.success) {
-      toast({ title: "Invalid input", description: parsed.error.errors[0].message, variant: "destructive" });
-      return;
-    }
-    setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: parsed.data.fullName },
-      },
-    });
-    setSubmitting(false);
-    if (error) {
-      toast({
-        title: "Sign up failed",
-        description: error.message.includes("already registered")
-          ? "This email is already registered. Try signing in instead."
-          : error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-    toast({
-      title: "Account created",
-      description: "Check your email to confirm your account, then sign in.",
-    });
-  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
