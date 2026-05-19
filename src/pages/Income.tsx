@@ -477,20 +477,13 @@ export default function Income() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete income?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the transaction{deleteTarget?.receipt ? " and its receipt" : ""}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete income?"
+        description={`This permanently removes the transaction${deleteTarget?.receipt ? " and its receipt" : ""}.`}
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }
