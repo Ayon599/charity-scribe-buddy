@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "transaction-attachments";
 const MAX_BYTES = 5 * 1024 * 1024;
+const SIGNED_URL_TTL = 3600;
 
 export async function uploadAttachment(file: File, folder: "income" | "expense"): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Only image files are allowed");
@@ -14,19 +15,37 @@ export async function uploadAttachment(file: File, folder: "income" | "expense")
     contentType: file.type,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  // Store the storage path (not a URL). Display code uses getAttachmentSignedUrl.
+  return path;
 }
 
-export function attachmentPathFromUrl(url: string): string | null {
+/** Extracts a storage path from either a stored path or a legacy public URL. */
+export function attachmentPathFromStored(value: string): string | null {
+  if (!value) return null;
   const marker = `/${BUCKET}/`;
-  const i = url.indexOf(marker);
-  if (i === -1) return null;
-  return url.substring(i + marker.length);
+  const i = value.indexOf(marker);
+  if (i !== -1) return value.substring(i + marker.length);
+  // Assume it's already a path
+  return value;
 }
 
-export async function deleteAttachment(url: string) {
-  const path = attachmentPathFromUrl(url);
+/** Back-compat alias. */
+export function attachmentPathFromUrl(url: string): string | null {
+  return attachmentPathFromStored(url);
+}
+
+export async function getAttachmentSignedUrl(stored: string): Promise<string | null> {
+  const path = attachmentPathFromStored(stored);
+  if (!path) return null;
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, SIGNED_URL_TTL);
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+export async function deleteAttachment(stored: string) {
+  const path = attachmentPathFromStored(stored);
   if (!path) return;
   await supabase.storage.from(BUCKET).remove([path]);
 }
