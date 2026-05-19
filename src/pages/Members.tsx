@@ -535,20 +535,13 @@ export default function Members() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete member?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Permanently delete {deleteTarget?.full_name}. Members with recorded transactions cannot be deleted — deactivate them instead.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete member?"
+        description={<>Permanently delete {deleteTarget?.full_name}. Members with recorded transactions cannot be deleted — deactivate them instead.</>}
+        onConfirm={confirmDelete}
+      />
 
       <MemberSubscriptionsDialog
         open={!!subsTarget}
