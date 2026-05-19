@@ -45,6 +45,8 @@ const txnSchema = z.object({
   payment_method: z.enum(PAYMENT_METHODS),
   txn_date: z.string().min(1),
   for_month: z.string().optional().or(z.literal("")),
+  from_month: z.string().optional().or(z.literal("")),
+  to_month: z.string().optional().or(z.literal("")),
   description: z.string().trim().max(500).optional().or(z.literal("")),
   issue_receipt: z.boolean(),
 });
@@ -58,9 +60,25 @@ const empty: FormValues = {
   payment_method: "cash",
   txn_date: new Date().toISOString().slice(0, 10),
   for_month: "",
+  from_month: "",
+  to_month: "",
   description: "",
   issue_receipt: true,
 };
+
+function monthsInRange(from: string, to: string): string[] {
+  // from / to: "YYYY-MM"
+  const [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  const out: string[] = [];
+  let y = fy, m = fm;
+  while (y < ty || (y === ty && m <= tm)) {
+    out.push(`${y}-${String(m).padStart(2, "0")}-01`);
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return out;
+}
 
 interface Row extends Txn {
   fund?: { name: string; code: string } | null;
