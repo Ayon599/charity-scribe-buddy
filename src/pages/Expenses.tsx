@@ -320,7 +320,7 @@ export default function Expenses() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="exp_attachment">Attachment (image, optional)</Label>
-              <Input id="exp_attachment" type="file" accept="image/*"
+              <Input id="exp_attachment" type="file" accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)} />
               {(attachmentFile || existingAttachment) && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -4,10 +4,16 @@ const BUCKET = "transaction-attachments";
 const MAX_BYTES = 5 * 1024 * 1024;
 const SIGNED_URL_TTL = 3600;
 
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const BLOCKED_EXT = ["svg", "xml", "html", "htm"];
+
 export async function uploadAttachment(file: File, folder: "income" | "expense"): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Only image files are allowed");
+  if (!ALLOWED_MIME.includes(file.type)) {
+    throw new Error("Only JPEG, PNG, GIF, or WebP images are allowed");
+  }
   if (file.size > MAX_BYTES) throw new Error("Image must be 5 MB or smaller");
-  const ext = file.name.split(".").pop() || "jpg";
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  if (BLOCKED_EXT.includes(ext)) throw new Error("This file type is not allowed");
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
