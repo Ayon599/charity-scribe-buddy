@@ -18,6 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Power, Trash2 } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 
 type MemberTypeRow = {
   id: string;
