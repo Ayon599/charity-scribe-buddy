@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, Receipt, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
-import { uploadAttachment, deleteAttachment, getAttachmentSignedUrl } from "@/lib/uploadAttachment";
+import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
+import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
 import type { Database } from "@/integrations/supabase/types";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
@@ -337,11 +338,7 @@ export default function Income() {
                         <Badge variant="outline">{PAYMENT_LABEL[r.payment_method as PaymentMethod]}</Badge>
                       </TableCell>
                       <TableCell>
-                        {r.attachment_url ? (
-                          <a href={r.attachment_url} target="_blank" rel="noreferrer" title="View attachment">
-                            <img src={r.attachment_url} alt="" className="h-10 w-10 rounded border object-cover" />
-                          </a>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        <AttachmentThumb stored={r.attachment_url} />
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
                       <TableCell className="text-right">
