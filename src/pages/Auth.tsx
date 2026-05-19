@@ -109,58 +109,25 @@ export default function AuthPage() {
           <CardDescription>Account Management System</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="si-email">Email</Label>
-                  <Input id="si-email" type="email" autoComplete="email"
-                    value={siEmail} onChange={(e) => setSiEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="si-password">Password</Label>
-                  <Input id="si-password" type="password" autoComplete="current-password"
-                    value={siPassword} onChange={(e) => setSiPassword(e.target.value)} required />
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="su-name">Full Name</Label>
-                  <Input id="su-name" value={suName}
-                    onChange={(e) => setSuName(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-email">Email</Label>
-                  <Input id="su-email" type="email" autoComplete="email"
-                    value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-password">Password</Label>
-                  <Input id="su-password" type="password" autoComplete="new-password"
-                    value={suPassword} onChange={(e) => setSuPassword(e.target.value)} required />
-                  <p className="text-xs text-muted-foreground">
-                    Minimum 6 characters. The first account becomes the admin.
-                  </p>
-                </div>
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleSignIn} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="si-email">Email</Label>
+              <Input id="si-email" type="email" autoComplete="email"
+                value={siEmail} onChange={(e) => setSiEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="si-password">Password</Label>
+              <Input id="si-password" type="password" autoComplete="current-password"
+                value={siPassword} onChange={(e) => setSiPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Access is by invitation only. Contact your administrator for an account.
+            </p>
+          </form>
         </CardContent>
       </Card>
     </div>
