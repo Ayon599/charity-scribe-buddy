@@ -213,20 +213,40 @@ export default function Income() {
       setSubmitting(false);
       return;
     }
-    const payload = {
+    // Resolve months covered: from/to range (create-only) or single for_month
+    let months: (string | null)[] = [v.for_month ? `${v.for_month}-01` : null];
+    if (!editing && v.from_month && v.to_month) {
+      if (v.to_month < v.from_month) {
+        toast({ title: "Invalid range", description: "To month must be on or after From month.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      const range = monthsInRange(v.from_month, v.to_month);
+      if (range.length > 24) {
+        toast({ title: "Range too large", description: "Maximum 24 months per entry.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      months = range;
+    } else if (!editing && (v.from_month || v.to_month)) {
+      // Only one of the two set → treat as single for_month
+      const single = v.from_month || v.to_month;
+      months = [`${single}-01`];
+    }
+
+    const basePayload = {
       fund_id: v.fund_id,
       member_id: v.member_id || null,
       donor_name: v.donor_name || null,
       amount: v.amount,
       payment_method: v.payment_method,
       txn_date: v.txn_date,
-      for_month: v.for_month ? `${v.for_month}-01` : null,
       description: v.description || null,
       attachment_url,
     };
 
     if (editing) {
-      const { error } = await supabase.from("transactions").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("transactions").update({ ...basePayload, for_month: months[0] }).eq("id", editing.id);
       if (error) {
         toast({ title: "Update failed", description: error.message, variant: "destructive" });
         setSubmitting(false);
@@ -237,27 +257,33 @@ export default function Income() {
       }
       toast({ title: "Income updated" });
     } else {
+      const rowsToInsert = months.map((fm) => ({
+        ...basePayload,
+        for_month: fm,
+        created_by: user?.id ?? null,
+      }));
       const { data: ins, error } = await supabase
         .from("transactions")
-        .insert({ ...payload, created_by: user?.id ?? null })
-        .select("id").single();
+        .insert(rowsToInsert)
+        .select("id");
       if (error) {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
         setSubmitting(false);
         return;
       }
-      if (v.issue_receipt && ins) {
+      if (v.issue_receipt && ins?.length) {
         const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
-        const { error: rerr } = await supabase.from("receipts").insert({
-          transaction_id: ins.id,
+        const receipts = ins.map((row) => ({
+          transaction_id: row.id,
           amount: v.amount,
           issued_to: issuedTo,
           issued_by: user?.id ?? null,
           receipt_no: "",
-        });
+        }));
+        const { error: rerr } = await supabase.from("receipts").insert(receipts);
         if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
       }
-      toast({ title: "Income recorded" });
+      toast({ title: months.length > 1 ? `Recorded ${months.length} monthly transactions` : "Income recorded" });
     }
     setDialogOpen(false);
     setSubmitting(false);
