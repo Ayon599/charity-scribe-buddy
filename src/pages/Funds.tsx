@@ -276,20 +276,13 @@ export default function Funds() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete fund?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete fund?"
+        description={<>Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.</>}
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }
