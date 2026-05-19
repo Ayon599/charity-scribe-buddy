@@ -439,7 +439,7 @@ export default function Income() {
 
             <div className="grid gap-2">
               <Label htmlFor="inc_attachment">Attachment (image, optional)</Label>
-              <Input id="inc_attachment" type="file" accept="image/*"
+              <Input id="inc_attachment" type="file" accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)} />
               {(attachmentFile || existingAttachment) && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
