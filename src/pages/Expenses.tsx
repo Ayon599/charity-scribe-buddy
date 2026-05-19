@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT } from "@/lib/format";
-import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
+import { uploadAttachment, deleteAttachment, getAttachmentSignedUrl } from "@/lib/uploadAttachment";
 import type { Database } from "@/integrations/supabase/types";
 
 type Expense = Database["public"]["Tables"]["expenses"]["Row"];

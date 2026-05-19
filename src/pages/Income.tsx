@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, Receipt, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
-import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
+import { uploadAttachment, deleteAttachment, getAttachmentSignedUrl } from "@/lib/uploadAttachment";
 import type { Database } from "@/integrations/supabase/types";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
