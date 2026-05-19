@@ -446,7 +446,7 @@ export default function Income() {
                   <Paperclip className="h-3 w-3" />
                   <span className="truncate">{attachmentFile ? attachmentFile.name : "Current attachment"}</span>
                   {existingAttachment && !attachmentFile && (
-                    <a href={existingAttachment} target="_blank" rel="noreferrer" className="underline">View</a>
+                    <AttachmentViewLink stored={existingAttachment}>View</AttachmentViewLink>
                   )}
                   <Button type="button" variant="ghost" size="icon" className="h-6 w-6"
                     onClick={() => { setAttachmentFile(null); setExistingAttachment(null); }}>
