@@ -470,11 +470,34 @@ export default function Income() {
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="for_month">For month (optional)</Label>
-              <Input id="for_month" type="month" value={form.for_month}
-                onChange={(e) => setForm({ ...form, for_month: e.target.value })} />
-            </div>
+            {editing ? (
+              <div className="grid gap-2">
+                <Label htmlFor="for_month">For month (optional)</Label>
+                <Input id="for_month" type="month" value={form.for_month}
+                  onChange={(e) => setForm({ ...form, for_month: e.target.value })} />
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>For months (optional)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input type="month" value={form.from_month}
+                    placeholder="From"
+                    onChange={(e) => setForm({ ...form, from_month: e.target.value })} />
+                  <Input type="month" value={form.to_month}
+                    placeholder="To"
+                    onChange={(e) => setForm({ ...form, to_month: e.target.value })} />
+                </div>
+                {form.from_month && form.to_month && form.to_month >= form.from_month && (() => {
+                  const n = monthsInRange(form.from_month, form.to_month).length;
+                  if (n <= 1) return null;
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Will create {n} transactions totalling ৳{formatBDT(n * (Number(form.amount) || 0))}.
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
