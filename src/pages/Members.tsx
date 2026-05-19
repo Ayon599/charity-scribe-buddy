@@ -53,6 +53,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types";
 import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialog";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
 type MemberType = { id: string; name: string; is_active: boolean; sort_order: number };
