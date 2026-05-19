@@ -30,6 +30,7 @@ import { Plus, Search, Receipt, Pencil, Trash2, Paperclip, X } from "lucide-reac
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
 import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
@@ -44,6 +45,8 @@ const txnSchema = z.object({
   payment_method: z.enum(PAYMENT_METHODS),
   txn_date: z.string().min(1),
   for_month: z.string().optional().or(z.literal("")),
+  from_month: z.string().optional().or(z.literal("")),
+  to_month: z.string().optional().or(z.literal("")),
   description: z.string().trim().max(500).optional().or(z.literal("")),
   issue_receipt: z.boolean(),
 });
@@ -57,9 +60,25 @@ const empty: FormValues = {
   payment_method: "cash",
   txn_date: new Date().toISOString().slice(0, 10),
   for_month: "",
+  from_month: "",
+  to_month: "",
   description: "",
   issue_receipt: true,
 };
+
+function monthsInRange(from: string, to: string): string[] {
+  // from / to: "YYYY-MM"
+  const [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  const out: string[] = [];
+  let y = fy, m = fm;
+  while (y < ty || (y === ty && m <= tm)) {
+    out.push(`${y}-${String(m).padStart(2, "0")}-01`);
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return out;
+}
 
 interface Row extends Txn {
   fund?: { name: string; code: string } | null;
@@ -194,20 +213,40 @@ export default function Income() {
       setSubmitting(false);
       return;
     }
-    const payload = {
+    // Resolve months covered: from/to range (create-only) or single for_month
+    let months: (string | null)[] = [v.for_month ? `${v.for_month}-01` : null];
+    if (!editing && v.from_month && v.to_month) {
+      if (v.to_month < v.from_month) {
+        toast({ title: "Invalid range", description: "To month must be on or after From month.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      const range = monthsInRange(v.from_month, v.to_month);
+      if (range.length > 24) {
+        toast({ title: "Range too large", description: "Maximum 24 months per entry.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      months = range;
+    } else if (!editing && (v.from_month || v.to_month)) {
+      // Only one of the two set → treat as single for_month
+      const single = v.from_month || v.to_month;
+      months = [`${single}-01`];
+    }
+
+    const basePayload = {
       fund_id: v.fund_id,
       member_id: v.member_id || null,
       donor_name: v.donor_name || null,
       amount: v.amount,
       payment_method: v.payment_method,
       txn_date: v.txn_date,
-      for_month: v.for_month ? `${v.for_month}-01` : null,
       description: v.description || null,
       attachment_url,
     };
 
     if (editing) {
-      const { error } = await supabase.from("transactions").update(payload).eq("id", editing.id);
+      const { error } = await supabase.from("transactions").update({ ...basePayload, for_month: months[0] }).eq("id", editing.id);
       if (error) {
         toast({ title: "Update failed", description: error.message, variant: "destructive" });
         setSubmitting(false);
@@ -218,27 +257,33 @@ export default function Income() {
       }
       toast({ title: "Income updated" });
     } else {
+      const rowsToInsert = months.map((fm) => ({
+        ...basePayload,
+        for_month: fm,
+        created_by: user?.id ?? null,
+      }));
       const { data: ins, error } = await supabase
         .from("transactions")
-        .insert({ ...payload, created_by: user?.id ?? null })
-        .select("id").single();
+        .insert(rowsToInsert)
+        .select("id");
       if (error) {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
         setSubmitting(false);
         return;
       }
-      if (v.issue_receipt && ins) {
+      if (v.issue_receipt && ins?.length) {
         const issuedTo = v.donor_name || members.find((mm) => mm.id === v.member_id)?.full_name || "Donor";
-        const { error: rerr } = await supabase.from("receipts").insert({
-          transaction_id: ins.id,
+        const receipts = ins.map((row) => ({
+          transaction_id: row.id,
           amount: v.amount,
           issued_to: issuedTo,
           issued_by: user?.id ?? null,
           receipt_no: "",
-        });
+        }));
+        const { error: rerr } = await supabase.from("receipts").insert(receipts);
         if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
       }
-      toast({ title: "Income recorded" });
+      toast({ title: months.length > 1 ? `Recorded ${months.length} monthly transactions` : "Income recorded" });
     }
     setDialogOpen(false);
     setSubmitting(false);
@@ -425,11 +470,34 @@ export default function Income() {
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="for_month">For month (optional)</Label>
-              <Input id="for_month" type="month" value={form.for_month}
-                onChange={(e) => setForm({ ...form, for_month: e.target.value })} />
-            </div>
+            {editing ? (
+              <div className="grid gap-2">
+                <Label htmlFor="for_month">For month (optional)</Label>
+                <Input id="for_month" type="month" value={form.for_month}
+                  onChange={(e) => setForm({ ...form, for_month: e.target.value })} />
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>For months (optional)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input type="month" value={form.from_month}
+                    placeholder="From"
+                    onChange={(e) => setForm({ ...form, from_month: e.target.value })} />
+                  <Input type="month" value={form.to_month}
+                    placeholder="To"
+                    onChange={(e) => setForm({ ...form, to_month: e.target.value })} />
+                </div>
+                {form.from_month && form.to_month && form.to_month >= form.from_month && (() => {
+                  const n = monthsInRange(form.from_month, form.to_month).length;
+                  if (n <= 1) return null;
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Will create {n} transactions totalling ৳{formatBDT(n * (Number(form.amount) || 0))}.
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
@@ -477,20 +545,13 @@ export default function Income() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete income?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the transaction{deleteTarget?.receipt ? " and its receipt" : ""}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete income?"
+        description={`This permanently removes the transaction${deleteTarget?.receipt ? " and its receipt" : ""}.`}
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }

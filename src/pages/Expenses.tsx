@@ -28,6 +28,7 @@ import { Plus, Search, Pencil, Trash2, Paperclip, X } from "lucide-react";
 import { formatBDT } from "@/lib/format";
 import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Expense = Database["public"]["Tables"]["expenses"]["Row"];
@@ -346,20 +347,13 @@ export default function Expenses() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete expense?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the expense entry.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete expense?"
+        description="This permanently removes the expense entry."
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }

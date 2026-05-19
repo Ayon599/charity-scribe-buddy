@@ -23,6 +23,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Power, Trash2 } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Fund = Database["public"]["Tables"]["funds"]["Row"];
@@ -276,20 +277,13 @@ export default function Funds() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete fund?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete fund?"
+        description={<>Permanently delete "{deleteTarget?.name}". Funds with existing transactions, expenses, or subscriptions cannot be deleted.</>}
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   );
 }
