@@ -30,6 +30,7 @@ import { Plus, Search, Receipt, Pencil, Trash2, Paperclip, X } from "lucide-reac
 import { formatBDT, PAYMENT_METHODS, PAYMENT_LABEL, type PaymentMethod } from "@/lib/format";
 import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
