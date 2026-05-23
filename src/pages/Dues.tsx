@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Fund = { id: string; name: string; code: string };
 type Member = { id: string; full_name: string; member_no: number; is_active: boolean };
