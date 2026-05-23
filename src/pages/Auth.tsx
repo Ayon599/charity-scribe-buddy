@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,16 +17,36 @@ const signInSchema = z.object({
 });
 
 export default function AuthPage() {
-  const { user, loading } = useAuth();
+  const { user, canAccessApp, adminProfile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [bootstrapNeeded, setBootstrapNeeded] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   const [siEmail, setSiEmail] = useState("");
   const [siPassword, setSiPassword] = useState("");
 
   useEffect(() => {
-    if (!loading && user) navigate("/", { replace: true });
-  }, [user, loading, navigate]);
+    supabase.rpc("bootstrap_needed").then(({ data }) => setBootstrapNeeded(!!data));
+  }, []);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    if (canAccessApp) {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (adminProfile?.status === "pending_approval") {
+      setStatusMsg("Your account is awaiting super admin approval. You'll be notified once approved.");
+      signOut();
+    } else if (adminProfile?.status === "rejected") {
+      setStatusMsg("Your access request was rejected. Please contact your super admin.");
+      signOut();
+    } else if (adminProfile && !adminProfile.is_active) {
+      setStatusMsg("Your account has been deactivated. Please contact your super admin.");
+      signOut();
+    }
+  }, [user, adminProfile, canAccessApp, loading, navigate, signOut]);
 
   if (loading) {
     return (
@@ -36,10 +56,11 @@ export default function AuthPage() {
     );
   }
 
-  if (user) return <Navigate to="/" replace />;
+  if (user && canAccessApp) return <Navigate to="/" replace />;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusMsg(null);
     const parsed = signInSchema.safeParse({ email: siEmail, password: siPassword });
     if (!parsed.success) {
       toast({ title: "Invalid input", description: parsed.error.errors[0].message, variant: "destructive" });
@@ -55,9 +76,8 @@ export default function AuthPage() {
       toast({ title: "Sign in failed", description: safeErrorMessage(error), variant: "destructive" });
       return;
     }
-    navigate("/", { replace: true });
+    // status check happens in the effect above
   };
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
@@ -67,6 +87,11 @@ export default function AuthPage() {
           <CardDescription>Account Management System</CardDescription>
         </CardHeader>
         <CardContent>
+          {statusMsg && (
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              {statusMsg}
+            </div>
+          )}
           <form onSubmit={handleSignIn} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="si-email">Email</Label>
@@ -82,9 +107,19 @@ export default function AuthPage() {
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Access is by invitation only. Contact your administrator for an account.
-            </p>
+
+            {bootstrapNeeded ? (
+              <p className="text-center text-xs text-muted-foreground">
+                No accounts yet?{" "}
+                <Link to="/signup" className="text-primary underline">
+                  Set up the first super admin
+                </Link>
+              </p>
+            ) : (
+              <p className="text-center text-xs text-muted-foreground">
+                Access is by invitation only. Contact your super admin for an invite.
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
