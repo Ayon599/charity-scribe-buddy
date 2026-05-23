@@ -7,6 +7,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Fund = { id: string; name: string; code: string };
 type SubRow = {
@@ -54,8 +55,8 @@ export function MemberSubscriptionsDialog({
       supabase.from("funds").select("id,name,code").eq("is_active", true).order("sort_order"),
       supabase.from("member_fund_subscriptions").select("*").eq("member_id", memberId!),
     ]);
-    if (fRes.error) toast({ title: "Failed to load funds", description: fRes.error.message, variant: "destructive" });
-    if (sRes.error) toast({ title: "Failed to load subs", description: sRes.error.message, variant: "destructive" });
+    if (fRes.error) toast({ title: "Failed to load funds", description: safeErrorMessage(fRes.error), variant: "destructive" });
+    if (sRes.error) toast({ title: "Failed to load subs", description: safeErrorMessage(sRes.error), variant: "destructive" });
     const fundList = (fRes.data ?? []) as Fund[];
     const subs = (sRes.data ?? []) as SubRow[];
     const next: Record<string, RowState> = {};
@@ -98,14 +99,14 @@ export function MemberSubscriptionsDialog({
       const { error } = await supabase
         .from("member_fund_subscriptions")
         .upsert(upserts, { onConflict: "member_id,fund_id" });
-      if (error) errors.push(error.message);
+      if (error) errors.push(safeErrorMessage(error));
     }
     if (deactivateIds.length) {
       const { error } = await supabase
         .from("member_fund_subscriptions")
         .update({ is_active: false })
         .in("id", deactivateIds);
-      if (error) errors.push(error.message);
+      if (error) errors.push(safeErrorMessage(error));
     }
 
     setSaving(false);

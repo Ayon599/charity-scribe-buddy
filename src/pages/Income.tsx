@@ -32,6 +32,7 @@ import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Txn = Database["public"]["Tables"]["transactions"]["Row"];
 type Fund = Pick<Database["public"]["Tables"]["funds"]["Row"], "id" | "name" | "code">;
@@ -116,7 +117,7 @@ export default function Income() {
       supabase.from("members").select("id, full_name, member_no, monthly_fee").eq("is_active", true).order("member_no"),
       supabase.from("receipts").select("transaction_id, receipt_no"),
     ]);
-    if (t.error) toast({ title: "Load failed", description: t.error.message, variant: "destructive" });
+    if (t.error) toast({ title: "Load failed", description: safeErrorMessage(t.error), variant: "destructive" });
     const fundMap = new Map((f.data ?? []).map((x) => [x.id, x]));
     const memberMap = new Map((m.data ?? []).map((x) => [x.id, x]));
     const recMap = new Map((r.data ?? []).map((x) => [x.transaction_id, x]));
@@ -209,7 +210,7 @@ export default function Income() {
         attachment_url = null;
       }
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({ title: "Upload failed", description: safeErrorMessage(err), variant: "destructive" });
       setSubmitting(false);
       return;
     }
@@ -248,7 +249,7 @@ export default function Income() {
     if (editing) {
       const { error } = await supabase.from("transactions").update({ ...basePayload, for_month: months[0] }).eq("id", editing.id);
       if (error) {
-        toast({ title: "Update failed", description: error.message, variant: "destructive" });
+        toast({ title: "Update failed", description: safeErrorMessage(error), variant: "destructive" });
         setSubmitting(false);
         return;
       }
@@ -267,7 +268,7 @@ export default function Income() {
         .insert(rowsToInsert)
         .select("id");
       if (error) {
-        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        toast({ title: "Save failed", description: safeErrorMessage(error), variant: "destructive" });
         setSubmitting(false);
         return;
       }
@@ -281,7 +282,7 @@ export default function Income() {
           receipt_no: "",
         }));
         const { error: rerr } = await supabase.from("receipts").insert(receipts);
-        if (rerr) toast({ title: "Receipt failed", description: rerr.message, variant: "destructive" });
+        if (rerr) toast({ title: "Receipt failed", description: safeErrorMessage(rerr), variant: "destructive" });
       }
       toast({ title: months.length > 1 ? `Recorded ${months.length} monthly transactions` : "Income recorded" });
     }
@@ -295,7 +296,7 @@ export default function Income() {
     if (deleteTarget.attachment_url) await deleteAttachment(deleteTarget.attachment_url);
     await supabase.from("receipts").delete().eq("transaction_id", deleteTarget.id);
     const { error } = await supabase.from("transactions").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Delete failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: "Income deleted" }); load(); }
     setDeleteTarget(null);
   }

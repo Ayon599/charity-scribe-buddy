@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { safeErrorMessage } from "@/lib/errors";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
@@ -51,7 +52,7 @@ export default function AuthPage() {
     });
     setSubmitting(false);
     if (error) {
-      toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+      toast({ title: "Sign in failed", description: safeErrorMessage(error), variant: "destructive" });
       return;
     }
     navigate("/", { replace: true });

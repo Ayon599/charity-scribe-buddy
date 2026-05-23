@@ -25,6 +25,7 @@ import {
 import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Fund = Database["public"]["Tables"]["funds"]["Row"];
 
@@ -60,7 +61,7 @@ export default function Funds() {
     if (!toggleTarget) return;
     const { error } = await supabase.from("funds")
       .update({ is_active: !toggleTarget.is_active }).eq("id", toggleTarget.id);
-    if (error) toast({ title: "Action failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Action failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: toggleTarget.is_active ? "Fund deactivated" : "Fund activated" }); fetchFunds(); }
     setToggleTarget(null);
   }
@@ -79,7 +80,7 @@ export default function Funds() {
       return;
     }
     const { error } = await supabase.from("funds").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Delete failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: "Fund deleted" }); fetchFunds(); }
     setDeleteTarget(null);
   }
@@ -95,7 +96,7 @@ export default function Funds() {
       .from("funds")
       .select("*")
       .order("sort_order", { ascending: true });
-    if (error) toast({ title: "Failed to load funds", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Failed to load funds", description: safeErrorMessage(error), variant: "destructive" });
     else setFunds(data ?? []);
     setLoading(false);
   }
@@ -137,7 +138,7 @@ export default function Funds() {
     const { error } = editing
       ? await supabase.from("funds").update(payload).eq("id", editing.id)
       : await supabase.from("funds").insert(payload);
-    if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Save failed", description: safeErrorMessage(error), variant: "destructive" });
     else {
       toast({ title: editing ? "Fund updated" : "Fund created" });
       setDialogOpen(false);
