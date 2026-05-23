@@ -69,7 +69,7 @@ export default function Dues() {
       supabase.from("transactions").select("member_id,fund_id,amount,txn_date"),
     ]);
     const err = fRes.error || mRes.error || sRes.error || tRes.error;
-    if (err) toast({ title: "Failed to load", description: err.message, variant: "destructive" });
+    if (err) toast({ title: "Failed to load", description: safeErrorMessage(err), variant: "destructive" });
     setFunds((fRes.data ?? []) as Fund[]);
     setMembers((mRes.data ?? []) as Member[]);
     setSubs(((sRes.data ?? []) as Subscription[]).map((s) => ({ ...s, monthly_amount: Number(s.monthly_amount) })));
