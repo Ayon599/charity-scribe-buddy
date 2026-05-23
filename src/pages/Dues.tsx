@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Fund = { id: string; name: string; code: string };
 type Member = { id: string; full_name: string; member_no: number; is_active: boolean };
@@ -68,7 +69,7 @@ export default function Dues() {
       supabase.from("transactions").select("member_id,fund_id,amount,txn_date"),
     ]);
     const err = fRes.error || mRes.error || sRes.error || tRes.error;
-    if (err) toast({ title: "Failed to load", description: err.message, variant: "destructive" });
+    if (err) toast({ title: "Failed to load", description: safeErrorMessage(err), variant: "destructive" });
     setFunds((fRes.data ?? []) as Fund[]);
     setMembers((mRes.data ?? []) as Member[]);
     setSubs(((sRes.data ?? []) as Subscription[]).map((s) => ({ ...s, monthly_amount: Number(s.monthly_amount) })));
