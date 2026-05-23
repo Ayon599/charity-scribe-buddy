@@ -30,6 +30,7 @@ import { uploadAttachment, deleteAttachment } from "@/lib/uploadAttachment";
 import { AttachmentThumb, AttachmentViewLink } from "@/components/AttachmentThumb";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import type { Database } from "@/integrations/supabase/types";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Expense = Database["public"]["Tables"]["expenses"]["Row"];
 type Fund = Pick<Database["public"]["Tables"]["funds"]["Row"], "id" | "name">;
@@ -84,7 +85,7 @@ export default function Expenses() {
       supabase.from("expenses").select("*").order("expense_date", { ascending: false }),
       supabase.from("funds").select("id, name").eq("is_active", true).order("sort_order"),
     ]);
-    if (e.error) toast({ title: "Load failed", description: e.error.message, variant: "destructive" });
+    if (e.error) toast({ title: "Load failed", description: safeErrorMessage(e.error), variant: "destructive" });
     const fundMap = new Map((f.data ?? []).map((x) => [x.id, x]));
     setRows((e.data ?? []).map((r) => ({ ...r, fund: fundMap.get(r.fund_id) ?? null })));
     setFunds(f.data ?? []);
@@ -149,7 +150,7 @@ export default function Expenses() {
         attachment_url = null;
       }
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({ title: "Upload failed", description: safeErrorMessage(err), variant: "destructive" });
       setSubmitting(false);
       return;
     }
@@ -165,7 +166,7 @@ export default function Expenses() {
     const { error } = editing
       ? await supabase.from("expenses").update(payload).eq("id", editing.id)
       : await supabase.from("expenses").insert({ ...payload, created_by: user?.id ?? null });
-    if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Save failed", description: safeErrorMessage(error), variant: "destructive" });
     else {
       toast({ title: editing ? "Expense updated" : "Expense recorded" });
       setDialogOpen(false);
@@ -178,7 +179,7 @@ export default function Expenses() {
     if (!deleteTarget) return;
     if (deleteTarget.attachment_url) await deleteAttachment(deleteTarget.attachment_url);
     const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Delete failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: "Expense deleted" }); load(); }
     setDeleteTarget(null);
   }

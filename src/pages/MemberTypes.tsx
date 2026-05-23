@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { safeErrorMessage } from "@/lib/errors";
 
 type MemberTypeRow = {
   id: string;
@@ -58,7 +59,7 @@ export default function MemberTypes() {
       return;
     }
     const { error } = await supabase.from("member_types").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Delete failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: "Type deleted" }); fetchRows(); }
     setDeleteTarget(null);
   }
@@ -75,7 +76,7 @@ export default function MemberTypes() {
       .select("*")
       .order("sort_order")
       .order("name");
-    if (error) toast({ title: "Failed to load", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Failed to load", description: safeErrorMessage(error), variant: "destructive" });
     else setRows(data ?? []);
     setLoading(false);
   }
@@ -105,7 +106,7 @@ export default function MemberTypes() {
       ? await supabase.from("member_types").update(payload).eq("id", editing.id)
       : await supabase.from("member_types").insert(payload);
     if (res.error) {
-      toast({ title: "Save failed", description: res.error.message, variant: "destructive" });
+      toast({ title: "Save failed", description: safeErrorMessage(res.error), variant: "destructive" });
     } else {
       toast({ title: editing ? "Type updated" : "Type added" });
       setOpen(false);
@@ -119,7 +120,7 @@ export default function MemberTypes() {
       .from("member_types")
       .update({ is_active: !r.is_active })
       .eq("id", r.id);
-    if (error) toast({ title: "Action failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Action failed", description: safeErrorMessage(error), variant: "destructive" });
     else fetchRows();
   }
 

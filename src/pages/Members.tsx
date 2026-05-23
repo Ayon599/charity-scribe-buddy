@@ -54,6 +54,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types";
 import { MemberSubscriptionsDialog } from "@/components/MemberSubscriptionsDialog";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { safeErrorMessage } from "@/lib/errors";
 
 type Member = Database["public"]["Tables"]["members"]["Row"];
 type MemberType = { id: string; name: string; is_active: boolean; sort_order: number };
@@ -114,9 +115,9 @@ export default function Members() {
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
       supabase.from("member_member_types").select("member_id, member_type_id"),
     ]);
-    if (mRes.error) toast({ title: "Failed to load members", description: mRes.error.message, variant: "destructive" });
+    if (mRes.error) toast({ title: "Failed to load members", description: safeErrorMessage(mRes.error), variant: "destructive" });
     else setMembers(mRes.data ?? []);
-    if (tRes.error) toast({ title: "Failed to load types", description: tRes.error.message, variant: "destructive" });
+    if (tRes.error) toast({ title: "Failed to load types", description: safeErrorMessage(tRes.error), variant: "destructive" });
     else setTypes((tRes.data ?? []) as MemberType[]);
     const map = new Map<string, Set<string>>();
     for (const r of linkRes.data ?? []) {
@@ -229,7 +230,7 @@ export default function Members() {
       setDialogOpen(false);
       void fetchAll();
     } catch (err: any) {
-      toast({ title: editing ? "Update failed" : "Create failed", description: err.message, variant: "destructive" });
+      toast({ title: editing ? "Update failed" : "Create failed", description: safeErrorMessage(err), variant: "destructive" });
     }
     setSubmitting(false);
   }
@@ -240,7 +241,7 @@ export default function Members() {
       .from("members")
       .update({ is_active: !toggleTarget.is_active })
       .eq("id", toggleTarget.id);
-    if (error) toast({ title: "Action failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Action failed", description: safeErrorMessage(error), variant: "destructive" });
     else {
       toast({ title: toggleTarget.is_active ? "Member deactivated" : "Member activated" });
       void fetchAll();
@@ -259,7 +260,7 @@ export default function Members() {
     }
     await supabase.from("member_fund_subscriptions").delete().eq("member_id", deleteTarget.id);
     const { error } = await supabase.from("members").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    if (error) toast({ title: "Delete failed", description: safeErrorMessage(error), variant: "destructive" });
     else { toast({ title: "Member deleted" }); void fetchAll(); }
     setDeleteTarget(null);
   }
