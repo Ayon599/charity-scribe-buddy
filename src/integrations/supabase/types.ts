@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          reason: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          full_name: string
+          id: string
+          invited_by: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          full_name: string
+          id?: string
+          invited_by: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          full_name?: string
+          id?: string
+          invited_by?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      admin_profiles: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          invited_at: string | null
+          invited_by: string | null
+          is_active: boolean
+          rejected_at: string | null
+          rejected_by: string | null
+          rejected_reason: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejected_reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          invited_at?: string | null
+          invited_by?: string | null
+          is_active?: boolean
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejected_reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -424,6 +541,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_needed: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -431,9 +549,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      validate_invitation_token: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          full_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "super_admin"
       member_type: "founding" | "executive" | "general"
       payment_method: "cash" | "bkash" | "nagad" | "rocket" | "bank" | "other"
     }
@@ -563,7 +691,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "super_admin"],
       member_type: ["founding", "executive", "general"],
       payment_method: ["cash", "bkash", "nagad", "rocket", "bank", "other"],
     },

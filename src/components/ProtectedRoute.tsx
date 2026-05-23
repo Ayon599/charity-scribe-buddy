@@ -2,8 +2,14 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading } = useAuth();
+export function ProtectedRoute({
+  children,
+  requireSuperAdmin = false,
+}: {
+  children: React.ReactNode;
+  requireSuperAdmin?: boolean;
+}) {
+  const { user, canAccessApp, isSuperAdmin, loading, adminProfile } = useAuth();
 
   if (loading) {
     return (
@@ -14,7 +20,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/auth" replace />;
+
+  // Profile still loading on a freshly authed user
+  if (adminProfile === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canAccessApp) return <Navigate to="/auth" replace />;
+  if (requireSuperAdmin && !isSuperAdmin) return <Navigate to="/" replace />;
 
   return <>{children}</>;
 }
