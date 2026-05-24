@@ -100,6 +100,8 @@ export default function Members() {
 
   const [memberTypeIds, setMemberTypeIds] = useState<Map<string, Set<string>>>(new Map());
   const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
+  const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
+  const [memberSubs, setMemberSubs] = useState<Map<string, { fund_id: string; monthly_amount: number }[]>>(new Map());
 
   useEffect(() => {
     document.title = "Members | Prottoy Foundation";
@@ -108,10 +110,12 @@ export default function Members() {
 
   async function fetchAll() {
     setLoading(true);
-    const [mRes, tRes, linkRes] = await Promise.all([
+    const [mRes, tRes, linkRes, fRes, sRes] = await Promise.all([
       supabase.from("members").select("*").order("member_no", { ascending: true }),
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
       supabase.from("member_member_types").select("member_id, member_type_id"),
+      supabase.from("funds").select("id,name"),
+      supabase.from("member_fund_subscriptions").select("member_id, fund_id, monthly_amount, is_active").eq("is_active", true),
     ]);
     if (mRes.error) toast({ title: "Failed to load members", description: safeErrorMessage(mRes.error), variant: "destructive" });
     else setMembers(mRes.data ?? []);
@@ -123,6 +127,14 @@ export default function Members() {
       map.get(r.member_id)!.add(r.member_type_id);
     }
     setMemberTypeIds(map);
+    setFundsMap(new Map((fRes.data ?? []).map((f: any) => [f.id, f.name])));
+    const sMap = new Map<string, { fund_id: string; monthly_amount: number }[]>();
+    for (const s of sRes.data ?? []) {
+      const arr = sMap.get(s.member_id) ?? [];
+      arr.push({ fund_id: s.fund_id, monthly_amount: Number(s.monthly_amount ?? 0) });
+      sMap.set(s.member_id, arr);
+    }
+    setMemberSubs(sMap);
     setLoading(false);
   }
 
