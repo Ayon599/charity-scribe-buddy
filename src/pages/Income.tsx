@@ -350,13 +350,15 @@ export default function Income() {
                     <TableHead>Method</TableHead>
                     <TableHead>Attachment</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>For Month</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                         No income recorded.
                       </TableCell>
                     </TableRow>
@@ -387,7 +389,13 @@ export default function Income() {
                         <AttachmentThumb stored={r.attachment_url} />
                       </TableCell>
                       <TableCell className="text-right font-mono">৳{formatBDT(r.amount)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {r.for_month
+                          ? new Date(r.for_month).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
                       <TableCell className="text-right">
+
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}>
                             <Pencil className="h-4 w-4" />
