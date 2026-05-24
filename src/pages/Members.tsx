@@ -66,7 +66,6 @@ const memberSchema = z.object({
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
-  monthly_fee: z.coerce.number().min(0).max(1_000_000),
   joining_date: z.string().min(1, "Joining date required"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
@@ -78,7 +77,6 @@ const emptyForm: FormValues = {
   email: "",
   mobile: "",
   address: "",
-  monthly_fee: 0,
   joining_date: new Date().toISOString().slice(0, 10),
   notes: "",
 };
@@ -164,7 +162,6 @@ export default function Members() {
       email: m.email ?? "",
       mobile: m.mobile ?? "",
       address: m.address ?? "",
-      monthly_fee: Number(m.monthly_fee ?? 0),
       joining_date: m.joining_date,
       notes: m.notes ?? "",
     });
@@ -209,7 +206,6 @@ export default function Members() {
       email: v.email || null,
       mobile: v.mobile || null,
       address: v.address || null,
-      monthly_fee: v.monthly_fee,
       joining_date: v.joining_date,
       notes: v.notes || null,
     };
@@ -326,7 +322,6 @@ export default function Members() {
                     <TableHead>Type</TableHead>
                     <TableHead>Mobile</TableHead>
                     <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Monthly Fee</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -334,7 +329,7 @@ export default function Members() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No members found.
                       </TableCell>
                     </TableRow>
@@ -356,9 +351,6 @@ export default function Members() {
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        ৳{Number(m.monthly_fee).toLocaleString()}
-                      </TableCell>
                       <TableCell>
                         {m.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
@@ -426,56 +418,43 @@ export default function Members() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>Member types</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" className="justify-between font-normal">
-                      <span className="truncate text-left">
-                        {selectedTypeIds.size === 0
-                          ? "Select types"
-                          : [...selectedTypeIds].map((id) => typeMap.get(id) ?? "?").join(", ")}
-                      </span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 p-2" align="start">
-                    <div className="max-h-64 overflow-auto space-y-1">
-                      {activeTypes.length === 0 && (
-                        <p className="text-xs text-muted-foreground p-2">No active types. Create one first.</p>
-                      )}
-                      {activeTypes.map((t) => (
-                        <label key={t.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-accent cursor-pointer">
-                          <Checkbox
-                            checked={selectedTypeIds.has(t.id)}
-                            onCheckedChange={() => toggleSelectedType(t.id)}
-                          />
-                          <span className="text-sm">{t.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                {selectedTypeIds.size > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {[...selectedTypeIds].map((id) => (
-                      <Badge key={id} variant="secondary">{typeMap.get(id) ?? "?"}</Badge>
+            <div className="grid gap-2">
+              <Label>Member types</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" className="justify-between font-normal">
+                    <span className="truncate text-left">
+                      {selectedTypeIds.size === 0
+                        ? "Select types"
+                        : [...selectedTypeIds].map((id) => typeMap.get(id) ?? "?").join(", ")}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <div className="max-h-64 overflow-auto space-y-1">
+                    {activeTypes.length === 0 && (
+                      <p className="text-xs text-muted-foreground p-2">No active types. Create one first.</p>
+                    )}
+                    {activeTypes.map((t) => (
+                      <label key={t.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-accent cursor-pointer">
+                        <Checkbox
+                          checked={selectedTypeIds.has(t.id)}
+                          onCheckedChange={() => toggleSelectedType(t.id)}
+                        />
+                        <span className="text-sm">{t.name}</span>
+                      </label>
                     ))}
                   </div>
-                )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="monthly_fee">Monthly fee (৳) *</Label>
-                <Input
-                  id="monthly_fee"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={form.monthly_fee}
-                  onChange={(e) => setForm({ ...form, monthly_fee: Number(e.target.value) })}
-                />
-              </div>
+                </PopoverContent>
+              </Popover>
+              {selectedTypeIds.size > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {[...selectedTypeIds].map((id) => (
+                    <Badge key={id} variant="secondary">{typeMap.get(id) ?? "?"}</Badge>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="joining_date">Joining date *</Label>
