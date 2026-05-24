@@ -334,6 +334,8 @@ export default function Members() {
                     <TableHead>Type</TableHead>
                     <TableHead>Mobile</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead>Fund Subscriptions</TableHead>
+                    <TableHead className="text-right">Total Monthly</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -341,7 +343,7 @@ export default function Members() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                         No members found.
                       </TableCell>
                     </TableRow>
@@ -363,6 +365,17 @@ export default function Members() {
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {(memberSubs.get(m.id) ?? []).map((s) => (
+                            <Badge key={s.fund_id} variant="outline">{fundsMap.get(s.fund_id) ?? "—"}</Badge>
+                          ))}
+                          {!memberSubs.get(m.id)?.length && <span className="text-muted-foreground">—</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        ৳{(memberSubs.get(m.id) ?? []).reduce((sum, s) => sum + s.monthly_amount, 0).toLocaleString()}
+                      </TableCell>
                       <TableCell>
                         {m.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
