@@ -177,6 +177,7 @@ export default function Members() {
       mobile: m.mobile ?? "",
       address: m.address ?? "",
       joining_date: m.joining_date,
+      reference_person: (m as any).reference_person ?? "",
       notes: m.notes ?? "",
     });
     setSelectedTypeIds(new Set(memberTypeIds.get(m.id) ?? []));
