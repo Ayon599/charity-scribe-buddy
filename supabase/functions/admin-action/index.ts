@@ -3,9 +3,9 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.23.8";
 
 const ActionSchema = z.object({
-  action: z.enum(["approve", "reject", "deactivate", "reactivate", "promote", "demote", "delete"]),
+  action: z.enum(["deactivate", "reactivate", "promote", "demote", "delete", "reset_password"]),
   target_user_id: z.string().uuid(),
-  reason: z.string().trim().max(500).optional(),
+  new_password: z.string().min(8).max(72).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -15,8 +15,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -30,8 +29,7 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const actorId = userData.user.id;
@@ -40,44 +38,35 @@ Deno.serve(async (req) => {
     const { data: isSuper } = await admin.rpc("is_super_admin", { _user_id: actorId });
     if (!isSuper) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const parsed = ActionSchema.safeParse(await req.json());
     if (!parsed.success) {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { action, target_user_id, reason } = parsed.data;
+    const { action, target_user_id, new_password } = parsed.data;
 
-    if (target_user_id === actorId && (action === "delete" || action === "demote" || action === "deactivate" || action === "reject")) {
+    if (target_user_id === actorId && (action === "delete" || action === "demote" || action === "deactivate")) {
       return new Response(JSON.stringify({ error: "You cannot perform this action on your own account" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    let updates: Record<string, unknown> | null = null;
 
     switch (action) {
-      case "approve":
-        updates = { status: "approved", approved_by: actorId, approved_at: new Date().toISOString(), rejected_at: null, rejected_by: null, rejected_reason: null };
-        break;
-      case "reject":
-        updates = { status: "rejected", rejected_by: actorId, rejected_at: new Date().toISOString(), rejected_reason: reason ?? null };
-        break;
       case "deactivate":
-        updates = { is_active: false };
+      case "reactivate": {
+        const { error } = await admin
+          .from("admin_profiles")
+          .update({ is_active: action === "reactivate" })
+          .eq("user_id", target_user_id);
+        if (error) throw error;
         break;
-      case "reactivate":
-        updates = { is_active: true };
-        break;
+      }
       case "promote": {
-        // Add super_admin role
         const { error } = await admin
           .from("user_roles")
           .insert({ user_id: target_user_id, role: "super_admin" });
@@ -85,15 +74,13 @@ Deno.serve(async (req) => {
         break;
       }
       case "demote": {
-        // Prevent removing the last super admin
         const { count } = await admin
           .from("user_roles")
           .select("user_id", { count: "exact", head: true })
           .eq("role", "super_admin");
         if ((count ?? 0) <= 1) {
           return new Response(JSON.stringify({ error: "Cannot remove the last super admin" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         const { error } = await admin
@@ -105,7 +92,6 @@ Deno.serve(async (req) => {
         break;
       }
       case "delete": {
-        // Prevent deleting the last super admin
         const { data: targetRoles } = await admin
           .from("user_roles")
           .select("role")
@@ -118,8 +104,7 @@ Deno.serve(async (req) => {
             .eq("role", "super_admin");
           if ((count ?? 0) <= 1) {
             return new Response(JSON.stringify({ error: "Cannot delete the last super admin" }), {
-              status: 400,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
         }
@@ -127,32 +112,25 @@ Deno.serve(async (req) => {
         if (error) throw error;
         break;
       }
+      case "reset_password": {
+        if (!new_password) {
+          return new Response(JSON.stringify({ error: "new_password is required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { error } = await admin.auth.admin.updateUserById(target_user_id, { password: new_password });
+        if (error) throw error;
+        break;
+      }
     }
-
-    if (updates) {
-      const { error: updErr } = await admin
-        .from("admin_profiles")
-        .update(updates)
-        .eq("user_id", target_user_id);
-      if (updErr) throw updErr;
-    }
-
-    await admin.from("admin_audit_log").insert({
-      actor_user_id: actorId,
-      target_user_id,
-      action,
-      reason: reason ?? null,
-    });
 
     return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("admin-action error", err);
     return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

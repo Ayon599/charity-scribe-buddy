@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
 import SignupPage from "./pages/Signup";
-import AcceptInvitePage from "./pages/AcceptInvite";
+
 import Members from "./pages/Members";
 import Funds from "./pages/Funds";
 import Income from "./pages/Income";
@@ -30,7 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/accept-invite" element={<AcceptInvitePage />} />
+            
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
             <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />

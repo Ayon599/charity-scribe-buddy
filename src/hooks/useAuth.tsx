@@ -3,10 +3,8 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 type Role = "admin" | "super_admin";
-type AdminStatus = "pending_approval" | "approved" | "rejected";
 
 interface AdminProfile {
-  status: AdminStatus;
   is_active: boolean;
 }
 
@@ -38,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => setRoles((data ?? []).map((r) => r.role as Role)));
     supabase
       .from("admin_profiles")
-      .select("status, is_active")
+      .select("is_active")
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data }) => setAdminProfile(data as AdminProfile | null));
@@ -72,8 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = roles.includes("admin") || roles.includes("super_admin");
   const isSuperAdmin = roles.includes("super_admin");
-  const canAccessApp =
-    isAdmin && adminProfile?.status === "approved" && adminProfile?.is_active === true;
+  const canAccessApp = isAdmin && adminProfile?.is_active === true;
 
   return (
     <AuthContext.Provider

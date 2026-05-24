@@ -36,13 +36,7 @@ export default function AuthPage() {
       navigate("/", { replace: true });
       return;
     }
-    if (adminProfile?.status === "pending_approval") {
-      setStatusMsg("Your account is awaiting super admin approval. You'll be notified once approved.");
-      signOut();
-    } else if (adminProfile?.status === "rejected") {
-      setStatusMsg("Your access request was rejected. Please contact your super admin.");
-      signOut();
-    } else if (adminProfile && !adminProfile.is_active) {
+    if (adminProfile && !adminProfile.is_active) {
       setStatusMsg("Your account has been deactivated. Please contact your super admin.");
       signOut();
     }
@@ -76,7 +70,6 @@ export default function AuthPage() {
       toast({ title: "Sign in failed", description: safeErrorMessage(error), variant: "destructive" });
       return;
     }
-    // status check happens in the effect above
   };
 
   return (
@@ -117,7 +110,7 @@ export default function AuthPage() {
               </p>
             ) : (
               <p className="text-center text-xs text-muted-foreground">
-                Access is by invitation only. Contact your super admin for an invite.
+                Need an account? Ask your super admin to create one for you.
               </p>
             )}
           </form>
