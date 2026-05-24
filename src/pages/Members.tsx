@@ -174,6 +174,7 @@ export default function Members() {
   function openEdit(m: Member) {
     setEditing(m);
     setForm({
+      member_no: String(m.member_no ?? ""),
       full_name: m.full_name,
       email: m.email ?? "",
       mobile: m.mobile ?? "",
