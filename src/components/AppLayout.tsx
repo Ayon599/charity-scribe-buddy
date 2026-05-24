@@ -1,9 +1,7 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard,
   Users,
@@ -30,25 +28,6 @@ const navItems = [
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, signOut, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
-  const [pendingCount, setPendingCount] = useState(0);
-
-  useEffect(() => {
-    if (!isSuperAdmin) return;
-    const fetchPending = () =>
-      supabase
-        .from("admin_profiles")
-        .select("user_id", { count: "exact", head: true })
-        .eq("status", "pending_approval")
-        .then(({ count }) => setPendingCount(count ?? 0));
-    fetchPending();
-    const channel = supabase
-      .channel("admin_profiles_pending")
-      .on("postgres_changes", { event: "*", schema: "public", table: "admin_profiles" }, fetchPending)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isSuperAdmin]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -89,20 +68,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
               to="/users"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )
               }
             >
-              <span className="flex items-center gap-3">
-                <ShieldCheck className="h-4 w-4" />
-                Users
-              </span>
-              {pendingCount > 0 && (
-                <Badge variant="destructive" className="h-5 px-1.5 text-xs">{pendingCount}</Badge>
-              )}
+              <ShieldCheck className="h-4 w-4" />
+              Users
             </NavLink>
           )}
         </nav>
