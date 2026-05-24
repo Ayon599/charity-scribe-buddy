@@ -162,7 +162,7 @@ export default function UsersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ca-password">Password (min 8 chars)</Label>
-                  <Input id="ca-password" type="text" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="ca-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={submitting}>
