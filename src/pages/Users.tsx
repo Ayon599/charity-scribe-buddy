@@ -226,7 +226,7 @@ export default function UsersPage() {
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" disabled={isSelf}>
+                              <Button variant="ghost" size="icon">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -234,37 +234,42 @@ export default function UsersPage() {
                               <DropdownMenuItem onClick={() => setResetTarget(r)}>
                                 Reset password
                               </DropdownMenuItem>
-                              {r.is_active ? (
-                                <DropdownMenuItem onClick={() => doAction("deactivate", r.user_id)}>
-                                  Deactivate
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => doAction("reactivate", r.user_id)}>
-                                  Reactivate
-                                </DropdownMenuItem>
+                              {!isSelf && (
+                                <>
+                                  {r.is_active ? (
+                                    <DropdownMenuItem onClick={() => doAction("deactivate", r.user_id)}>
+                                      Deactivate
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => doAction("reactivate", r.user_id)}>
+                                      Reactivate
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isSuper ? (
+                                    <DropdownMenuItem onClick={() => doAction("demote", r.user_id)}>
+                                      Demote to admin
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => doAction("promote", r.user_id)}>
+                                      Promote to super admin
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => {
+                                      if (confirm(`Delete ${r.email}? This cannot be undone.`)) {
+                                        doAction("delete", r.user_id);
+                                      }
+                                    }}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
                               )}
-                              {isSuper ? (
-                                <DropdownMenuItem onClick={() => doAction("demote", r.user_id)}>
-                                  Demote to admin
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => doAction("promote", r.user_id)}>
-                                  Promote to super admin
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => {
-                                  if (confirm(`Delete ${r.email}? This cannot be undone.`)) {
-                                    doAction("delete", r.user_id);
-                                  }
-                                }}
-                              >
-                                Delete
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
+
                         </TableCell>
                       </TableRow>
                     );
