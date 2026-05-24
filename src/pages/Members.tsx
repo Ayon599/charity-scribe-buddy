@@ -423,18 +423,30 @@ export default function Members() {
             <DialogDescription>
               {editing
                 ? `Member No. ${editing.member_no}`
-                : "A member number will be assigned automatically."}
+                : "Leave Member No. empty to auto-assign."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="full_name">Full name *</Label>
-              <Input
-                id="full_name"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                required
-              />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="member_no">Member No.</Label>
+                <Input
+                  id="member_no"
+                  inputMode="numeric"
+                  placeholder="Auto"
+                  value={form.member_no}
+                  onChange={(e) => setForm({ ...form, member_no: e.target.value.replace(/[^\d]/g, "") })}
+                />
+              </div>
+              <div className="grid gap-2 col-span-2">
+                <Label htmlFor="full_name">Full name *</Label>
+                <Input
+                  id="full_name"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  required
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
