@@ -222,6 +222,7 @@ export default function Members() {
       mobile: v.mobile || null,
       address: v.address || null,
       joining_date: v.joining_date,
+      reference_person: v.reference_person || null,
       notes: v.notes || null,
     };
 
