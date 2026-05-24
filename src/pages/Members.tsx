@@ -369,6 +369,7 @@ export default function Members() {
                         </div>
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
+                      <TableCell>{(m as any).reference_person ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
