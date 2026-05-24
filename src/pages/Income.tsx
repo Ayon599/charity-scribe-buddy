@@ -350,7 +350,9 @@ export default function Income() {
                     <TableHead>Method</TableHead>
                     <TableHead>Attachment</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>For Month</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
