@@ -162,7 +162,7 @@ export default function UsersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ca-password">Password (min 8 chars)</Label>
-                  <Input id="ca-password" type="text" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="ca-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={submitting}>
@@ -292,7 +292,7 @@ export default function UsersPage() {
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="rp-pw">New password (min 8 chars)</Label>
-              <Input id="rp-pw" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              <Input id="rp-pw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
             </div>
             <DialogFooter>
               <Button type="submit">Update password</Button>
