@@ -337,6 +337,7 @@ export default function Members() {
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Mobile</TableHead>
+                    <TableHead>Reference</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Fund Subscriptions</TableHead>
                     <TableHead className="text-right">Total Monthly</TableHead>
