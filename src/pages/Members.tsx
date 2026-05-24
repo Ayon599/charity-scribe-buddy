@@ -67,6 +67,7 @@ const memberSchema = z.object({
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
   joining_date: z.string().min(1, "Joining date required"),
+  reference_person: z.string().trim().max(100).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
@@ -78,6 +79,7 @@ const emptyForm: FormValues = {
   mobile: "",
   address: "",
   joining_date: new Date().toISOString().slice(0, 10),
+  reference_person: "",
   notes: "",
 };
 
@@ -175,6 +177,7 @@ export default function Members() {
       mobile: m.mobile ?? "",
       address: m.address ?? "",
       joining_date: m.joining_date,
+      reference_person: (m as any).reference_person ?? "",
       notes: m.notes ?? "",
     });
     setSelectedTypeIds(new Set(memberTypeIds.get(m.id) ?? []));
@@ -219,6 +222,7 @@ export default function Members() {
       mobile: v.mobile || null,
       address: v.address || null,
       joining_date: v.joining_date,
+      reference_person: v.reference_person || null,
       notes: v.notes || null,
     };
 
@@ -333,6 +337,7 @@ export default function Members() {
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Mobile</TableHead>
+                    <TableHead>Reference</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Fund Subscriptions</TableHead>
                     <TableHead className="text-right">Total Monthly</TableHead>
@@ -343,7 +348,7 @@ export default function Members() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                         No members found.
                       </TableCell>
                     </TableRow>
@@ -364,6 +369,7 @@ export default function Members() {
                         </div>
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
+                      <TableCell>{(m as any).reference_person ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -490,6 +496,23 @@ export default function Members() {
                 onChange={(e) => setForm({ ...form, joining_date: e.target.value })}
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="reference_person">Reference person</Label>
+              <Input
+                id="reference_person"
+                list="reference-person-options"
+                placeholder="Select an existing member or type a new name"
+                value={form.reference_person}
+                onChange={(e) => setForm({ ...form, reference_person: e.target.value })}
+              />
+              <datalist id="reference-person-options">
+                {members
+                  .filter((m) => !editing || m.id !== editing.id)
+                  .map((m) => (
+                    <option key={m.id} value={m.full_name} />
+                  ))}
+              </datalist>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>

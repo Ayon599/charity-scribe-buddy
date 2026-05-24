@@ -256,6 +256,7 @@ export type Database = {
           mobile: string | null
           monthly_fee: number
           notes: string | null
+          reference_person: string | null
           updated_at: string
         }
         Insert: {
@@ -272,6 +273,7 @@ export type Database = {
           mobile?: string | null
           monthly_fee?: number
           notes?: string | null
+          reference_person?: string | null
           updated_at?: string
         }
         Update: {
@@ -288,6 +290,7 @@ export type Database = {
           mobile?: string | null
           monthly_fee?: number
           notes?: string | null
+          reference_person?: string | null
           updated_at?: string
         }
         Relationships: [
