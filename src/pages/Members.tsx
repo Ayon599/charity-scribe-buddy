@@ -66,7 +66,6 @@ const memberSchema = z.object({
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
-  monthly_fee: z.coerce.number().min(0).max(1_000_000),
   joining_date: z.string().min(1, "Joining date required"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
@@ -78,7 +77,6 @@ const emptyForm: FormValues = {
   email: "",
   mobile: "",
   address: "",
-  monthly_fee: 0,
   joining_date: new Date().toISOString().slice(0, 10),
   notes: "",
 };
@@ -164,7 +162,6 @@ export default function Members() {
       email: m.email ?? "",
       mobile: m.mobile ?? "",
       address: m.address ?? "",
-      monthly_fee: Number(m.monthly_fee ?? 0),
       joining_date: m.joining_date,
       notes: m.notes ?? "",
     });
@@ -209,7 +206,6 @@ export default function Members() {
       email: v.email || null,
       mobile: v.mobile || null,
       address: v.address || null,
-      monthly_fee: v.monthly_fee,
       joining_date: v.joining_date,
       notes: v.notes || null,
     };
