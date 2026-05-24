@@ -329,7 +329,7 @@ export default function Members() {
                 <TableBody>
                   {filtered.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         No members found.
                       </TableCell>
                     </TableRow>
@@ -351,9 +351,6 @@ export default function Members() {
                       </TableCell>
                       <TableCell>{m.mobile ?? "—"}</TableCell>
                       <TableCell>{m.joining_date}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        ৳{Number(m.monthly_fee).toLocaleString()}
-                      </TableCell>
                       <TableCell>
                         {m.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
