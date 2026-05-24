@@ -219,7 +219,7 @@ export default function Members() {
     }
     setSubmitting(true);
     const v = parsed.data;
-    const payload = {
+    const payload: any = {
       full_name: v.full_name,
       email: v.email || null,
       mobile: v.mobile || null,
@@ -228,6 +228,9 @@ export default function Members() {
       reference_person: v.reference_person || null,
       notes: v.notes || null,
     };
+    if (v.member_no && v.member_no.trim() !== "") {
+      payload.member_no = parseInt(v.member_no, 10);
+    }
 
     try {
       let memberId = editing?.id;
