@@ -62,6 +62,7 @@ type MemberType = { id: string; name: string; is_active: boolean; sort_order: nu
 
 
 const memberSchema = z.object({
+  member_no: z.string().trim().regex(/^\d*$/, "Must be a number").optional().or(z.literal("")),
   full_name: z.string().trim().min(1, "Name is required").max(100),
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
@@ -74,6 +75,7 @@ const memberSchema = z.object({
 type FormValues = z.infer<typeof memberSchema>;
 
 const emptyForm: FormValues = {
+  member_no: "",
   full_name: "",
   email: "",
   mobile: "",
@@ -172,6 +174,7 @@ export default function Members() {
   function openEdit(m: Member) {
     setEditing(m);
     setForm({
+      member_no: String(m.member_no ?? ""),
       full_name: m.full_name,
       email: m.email ?? "",
       mobile: m.mobile ?? "",
@@ -216,7 +219,7 @@ export default function Members() {
     }
     setSubmitting(true);
     const v = parsed.data;
-    const payload = {
+    const payload: any = {
       full_name: v.full_name,
       email: v.email || null,
       mobile: v.mobile || null,
@@ -225,6 +228,9 @@ export default function Members() {
       reference_person: v.reference_person || null,
       notes: v.notes || null,
     };
+    if (v.member_no && v.member_no.trim() !== "") {
+      payload.member_no = parseInt(v.member_no, 10);
+    }
 
     try {
       let memberId = editing?.id;
@@ -417,18 +423,30 @@ export default function Members() {
             <DialogDescription>
               {editing
                 ? `Member No. ${editing.member_no}`
-                : "A member number will be assigned automatically."}
+                : "Leave Member No. empty to auto-assign."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="full_name">Full name *</Label>
-              <Input
-                id="full_name"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                required
-              />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="member_no">Member No.</Label>
+                <Input
+                  id="member_no"
+                  inputMode="numeric"
+                  placeholder="Auto"
+                  value={form.member_no}
+                  onChange={(e) => setForm({ ...form, member_no: e.target.value.replace(/[^\d]/g, "") })}
+                />
+              </div>
+              <div className="grid gap-2 col-span-2">
+                <Label htmlFor="full_name">Full name *</Label>
+                <Input
+                  id="full_name"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  required
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
