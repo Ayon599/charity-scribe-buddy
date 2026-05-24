@@ -67,6 +67,7 @@ const memberSchema = z.object({
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
   joining_date: z.string().min(1, "Joining date required"),
+  reference_person: z.string().trim().max(100).optional().or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
@@ -78,6 +79,7 @@ const emptyForm: FormValues = {
   mobile: "",
   address: "",
   joining_date: new Date().toISOString().slice(0, 10),
+  reference_person: "",
   notes: "",
 };
 
