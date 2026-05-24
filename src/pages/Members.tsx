@@ -62,6 +62,7 @@ type MemberType = { id: string; name: string; is_active: boolean; sort_order: nu
 
 
 const memberSchema = z.object({
+  member_no: z.string().trim().regex(/^\d*$/, "Must be a number").optional().or(z.literal("")),
   full_name: z.string().trim().min(1, "Name is required").max(100),
   email: z.string().trim().max(255).email("Invalid email").optional().or(z.literal("")),
   mobile: z.string().trim().max(20).optional().or(z.literal("")),
@@ -74,6 +75,7 @@ const memberSchema = z.object({
 type FormValues = z.infer<typeof memberSchema>;
 
 const emptyForm: FormValues = {
+  member_no: "",
   full_name: "",
   email: "",
   mobile: "",
