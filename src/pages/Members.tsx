@@ -498,6 +498,23 @@ export default function Members() {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="reference_person">Reference person</Label>
+              <Input
+                id="reference_person"
+                list="reference-person-options"
+                placeholder="Select an existing member or type a new name"
+                value={form.reference_person}
+                onChange={(e) => setForm({ ...form, reference_person: e.target.value })}
+              />
+              <datalist id="reference-person-options">
+                {members
+                  .filter((m) => !editing || m.id !== editing.id)
+                  .map((m) => (
+                    <option key={m.id} value={m.full_name} />
+                  ))}
+              </datalist>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
                 id="address"
