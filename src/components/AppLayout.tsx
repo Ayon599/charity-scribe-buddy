@@ -20,22 +20,11 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/members", label: "Members", icon: Users },
   { to: "/member-types", label: "Member Types", icon: Tags },
-  { to: "/funds", label: "Wallet", icon: Wallet },
-  { to: "/income", label: "Income", icon: ArrowDownCircle },
-  { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
-  { to: "/dues", label: "Dues", icon: Receipt },
-  { to: "/blood-donors", label: "Blood Donors", icon: Droplet },
-];
-import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/members", label: "Members", icon: Users },
-  { to: "/member-types", label: "Member Types", icon: Tags },
   { to: "/funds", label: "Funds", icon: Wallet },
   { to: "/income", label: "Income", icon: ArrowDownCircle },
   { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
   { to: "/dues", label: "Dues", icon: Receipt },
+  { to: "/blood-donors", label: "Blood Donors", icon: Droplet },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
