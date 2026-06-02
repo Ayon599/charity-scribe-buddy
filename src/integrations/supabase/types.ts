@@ -41,6 +41,57 @@ export type Database = {
         }
         Relationships: []
       }
+      blood_donors: {
+        Row: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at: string
+          id: string
+          is_active: boolean
+          last_donation_date: string | null
+          mobile: string | null
+          name: string
+          notes: string | null
+          permanent_address: string | null
+          present_address: string | null
+          reference_mobile: string | null
+          reference_person: string | null
+          sl: number
+          updated_at: string
+        }
+        Insert: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_donation_date?: string | null
+          mobile?: string | null
+          name: string
+          notes?: string | null
+          permanent_address?: string | null
+          present_address?: string | null
+          reference_mobile?: string | null
+          reference_person?: string | null
+          sl: number
+          updated_at?: string
+        }
+        Update: {
+          blood_group?: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_donation_date?: string | null
+          mobile?: string | null
+          name?: string
+          notes?: string | null
+          permanent_address?: string | null
+          present_address?: string | null
+          reference_mobile?: string | null
+          reference_person?: string | null
+          sl?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -466,6 +517,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "super_admin"
+      blood_group: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-"
       member_type: "founding" | "executive" | "general"
       payment_method: "cash" | "bkash" | "nagad" | "rocket" | "bank" | "other"
     }
@@ -596,6 +648,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "super_admin"],
+      blood_group: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
       member_type: ["founding", "executive", "general"],
       payment_method: ["cash", "bkash", "nagad", "rocket", "bank", "other"],
     },
