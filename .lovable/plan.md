@@ -1,31 +1,24 @@
-## One-time import: 51 members from your Excel
+## Branding update with Prottoy Foundation logo
 
-### Source
-`Prottoy Foundation Account Summary Up To 16 March 2025 (1).xlsx` — 51 rows, columns: Member No, Member Name, Reference Person Name, Member Type, Mobile Number, Email Address.
+Use the uploaded `header@4x.png` (green logo + Bangla wordmark on patterned background) as the primary brand asset, and update colors to match the logo's deep green.
 
-### Data summary
-- **Member Nos**: 1–51
-- **Type "Founding & Executive"**: rows 1–13 (linked to BOTH Founding and Executive types)
-- **Type "General"**: rows 14–51
-- **Reference Person**: present from row 14 onwards
-- **Email**: only row 1 (`opunurullah@gmail.com`)
-- **Mobile**: most rows, a few blank (rows 35–38, 40–50)
-- **Existing in DB**: members #1 (Md Nurullah) and #14 (Asfat) — these will be **updated** per your choice
-- **Member types**: Founding, Executive, General all already exist in DB — nothing to auto-create
+### Assets
+- Upload `header@4x.png` to Lovable Assets CDN → `src/assets/header.png.asset.json`.
+- Also create a square logo-only crop for favicon + sidebar icon → `src/assets/logo.png.asset.json` (cropped from the same image via ImageMagick).
 
-### What I'll run (single SQL via the insert tool — no schema changes)
-1. **Upsert into `members`** keyed on `member_no`:
-   - `full_name`, `mobile` (blank → NULL), `email` (blank → NULL), `reference_person` (blank → NULL)
-   - `joining_date` = today for new rows, kept as-is for existing rows
-   - `is_active = true`
-2. **Replace `member_member_types` links** for these 51 members:
-   - Delete existing links for member_no 1–51
-   - Insert: rows 1–13 → Founding + Executive (2 links each), rows 14–51 → General (1 link)
+### Theme (index.css)
+Shift the primary palette to the logo's green:
+- `--primary: 150 60% 22%` (deep green ~#1f6b46)
+- `--primary-foreground: 0 0% 100%`
+- `--ring: 150 60% 22%`
+- Add `--brand-green` token for accents.
+- Keep light/dark mode structure; only swap primary hues.
 
-### After import
-You'll see all 51 members on the `/members` page, with the type chips showing **Founding · Executive** for the first 13 and **General** for the rest. Reference Person column will be populated from row 14.
+### Layout / UI
+- `src/components/AppLayout.tsx`: replace the text-only sidebar header with the logo image + "Prottoy Foundation" title. Same on the mobile top bar.
+- `src/pages/Auth.tsx` & `src/pages/Signup.tsx`: show the full header banner image above the card title.
+- `index.html`: update `<link rel="icon">` to the new favicon (cropped logo PNG written to `public/favicon.png`), remove the old `favicon.ico`.
 
-### Not in scope
-- Monthly fees, joining dates, addresses (not in your sheet)
-- Fund subscriptions (separate page)
-- No UI changes
+### Out of scope
+- No changes to data, routes, or business logic.
+- App name text stays "Prottoy Foundation" (already set).
