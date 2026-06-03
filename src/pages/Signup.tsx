@@ -65,10 +65,10 @@ export default function SignupPage() {
       return;
     }
     toast({
-      title: "Check your email",
-      description: "We sent a confirmation link. Click it to activate your super admin account.",
+      title: "Account created",
+      description: "Your super admin account is ready. Signing you in…",
     });
-    navigate("/auth", { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
