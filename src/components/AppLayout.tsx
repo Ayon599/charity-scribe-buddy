@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import logoAsset from "@/assets/logo.png.asset.json";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,9 +40,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-muted/30">
       <aside className="hidden w-60 flex-col border-r bg-card md:flex">
-        <div className="border-b p-4">
-          <h1 className="text-lg font-semibold">Prottoy Foundation</h1>
-          <p className="text-xs text-muted-foreground">Account Management</p>
+        <div className="border-b p-4 flex items-center gap-3">
+          <img src={logoAsset.url} alt="Prottoy Foundation" className="h-10 w-10 rounded-full" />
+          <div>
+            <h1 className="text-sm font-semibold leading-tight">Prottoy Foundation</h1>
+            <p className="text-xs text-muted-foreground">Account Management</p>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => {
@@ -93,7 +97,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <main className="flex-1 overflow-auto">
         <div className="md:hidden flex items-center justify-between border-b bg-card p-3">
-          <h1 className="font-semibold">Prottoy Foundation</h1>
+          <div className="flex items-center gap-2">
+            <img src={logoAsset.url} alt="Prottoy Foundation" className="h-7 w-7 rounded-full" />
+            <h1 className="font-semibold">Prottoy Foundation</h1>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleSignOut}>
             <LogOut className="h-4 w-4" />
           </Button>

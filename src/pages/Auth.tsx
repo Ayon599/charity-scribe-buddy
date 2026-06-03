@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { safeErrorMessage } from "@/lib/errors";
+import headerAsset from "@/assets/header.png.asset.json";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
@@ -74,7 +75,8 @@ export default function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md overflow-hidden">
+        <img src={headerAsset.url} alt="Prottoy Foundation" className="w-full" />
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Prottoy Foundation</CardTitle>
           <CardDescription>Account Management System</CardDescription>

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { safeErrorMessage } from "@/lib/errors";
+import headerAsset from "@/assets/header.png.asset.json";
 
 const schema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(200),
