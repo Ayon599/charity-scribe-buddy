@@ -2,10 +2,23 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.23.8";
 
+const USERNAME_DOMAIN = "prottoy.local";
+
 const ActionSchema = z.object({
-  action: z.enum(["deactivate", "reactivate", "promote", "demote", "delete", "reset_password"]),
+  action: z.enum([
+    "deactivate", "reactivate", "promote", "demote", "delete",
+    "reset_password", "change_username",
+  ]),
   target_user_id: z.string().uuid(),
   new_password: z.string().min(8).max(72).optional(),
+  new_username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9_.-]+$/)
+    .optional(),
 });
 
 Deno.serve(async (req) => {
@@ -48,7 +61,7 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { action, target_user_id, new_password } = parsed.data;
+    const { action, target_user_id, new_password, new_username } = parsed.data;
 
     if (target_user_id === actorId && (action === "delete" || action === "demote" || action === "deactivate")) {
       return new Response(JSON.stringify({ error: "You cannot perform this action on your own account" }), {
@@ -120,6 +133,30 @@ Deno.serve(async (req) => {
         }
         const { error } = await admin.auth.admin.updateUserById(target_user_id, { password: new_password });
         if (error) throw error;
+        break;
+      }
+      case "change_username": {
+        if (!new_username) {
+          return new Response(JSON.stringify({ error: "new_username is required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const newEmail = `${new_username}@${USERNAME_DOMAIN}`;
+        const { error: authErr } = await admin.auth.admin.updateUserById(target_user_id, {
+          email: newEmail,
+          email_confirm: true,
+          user_metadata: { username: new_username },
+        });
+        if (authErr) {
+          return new Response(JSON.stringify({ error: authErr.message }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { error: profErr } = await admin
+          .from("admin_profiles")
+          .update({ email: newEmail })
+          .eq("user_id", target_user_id);
+        if (profErr) throw profErr;
         break;
       }
     }
