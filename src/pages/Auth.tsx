@@ -139,7 +139,7 @@ export default function AuthPage() {
               <p className="text-center text-xs text-muted-foreground">
                 No accounts yet?{" "}
                 <Link to="/signup" className="text-primary underline">
-                  Set up the first super admin
+                  Set up the first administrator
                 </Link>
               </p>
             ) : (
