@@ -2,8 +2,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.23.8";
 
+const USERNAME_DOMAIN = "prottoy.local";
+
 const Schema = z.object({
-  email: z.string().trim().email().max(255),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9_.-]+$/),
   full_name: z.string().trim().min(1).max(200),
   password: z.string().min(8).max(72),
 });
@@ -45,13 +53,14 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const { email, full_name, password } = parsed.data;
+    const { username, full_name, password } = parsed.data;
+    const email = `${username}@${USERNAME_DOMAIN}`;
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: { full_name, username },
     });
     if (createErr) {
       return new Response(JSON.stringify({ error: createErr.message }), {
@@ -59,7 +68,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ user_id: created.user?.id, email, full_name }), {
+    return new Response(JSON.stringify({ user_id: created.user?.id, username, full_name }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
