@@ -7,13 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { safeErrorMessage } from "@/lib/errors";
 import headerAsset from "@/assets/header.png.asset.json";
 
+const USERNAME_DOMAIN = "prottoy.local";
+
 const schema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(200),
-  email: z.string().trim().email("Invalid email").max(255),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters")
+    .max(50)
+    .regex(/^[a-z0-9_.-]+$/, "Use letters, numbers, dot, dash, or underscore"),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
@@ -23,8 +31,9 @@ export default function SignupPage() {
   const [allowed, setAllowed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     supabase.rpc("bootstrap_needed").then(({ data }) => {
@@ -45,18 +54,18 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ full_name: fullName, email, password });
+    const parsed = schema.safeParse({ full_name: fullName, username, password });
     if (!parsed.success) {
       toast({ title: "Invalid input", description: parsed.error.errors[0].message, variant: "destructive" });
       return;
     }
     setSubmitting(true);
     const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
+      email: `${parsed.data.username}@${USERNAME_DOMAIN}`,
       password: parsed.data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
-        data: { full_name: parsed.data.full_name },
+        data: { full_name: parsed.data.full_name, username: parsed.data.username },
       },
     });
     setSubmitting(false);
@@ -88,12 +97,36 @@ export default function SignupPage() {
               <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password (min 8 chars)</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
