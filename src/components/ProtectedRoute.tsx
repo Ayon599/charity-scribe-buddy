@@ -9,9 +9,9 @@ export function ProtectedRoute({
   children: React.ReactNode;
   requireSuperAdmin?: boolean;
 }) {
-  const { user, canAccessApp, isSuperAdmin, loading, adminProfile } = useAuth();
+  const { user, canAccessApp, isSuperAdmin, loading, profileLoaded } = useAuth();
 
-  if (loading) {
+  if (loading || (user && !profileLoaded)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -20,16 +20,6 @@ export function ProtectedRoute({
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-
-  // Profile still loading on a freshly authed user
-  if (adminProfile === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   if (!canAccessApp) return <Navigate to="/auth" replace />;
   if (requireSuperAdmin && !isSuperAdmin) return <Navigate to="/" replace />;
 
