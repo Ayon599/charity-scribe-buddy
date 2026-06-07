@@ -1,21 +1,19 @@
-# Fix: Preview stuck on loading spinner
+## Scope
+Two focused UI changes on the Users page (`/users`) with no backend or data-model changes.
 
-## Problem
-You're signed in to the preview with an old Google account (`opunurullah@gmail.com`) that no longer has a row in `user_roles` or `admin_profiles` (only the new `nurullah` admin does). `ProtectedRoute` waits for `adminProfile` to become non-null, but for accounts with no profile it stays `null` forever — so the spinner never goes away and you never reach the login screen.
+### 1. Replace email with username everywhere on the page
+- **Table column**: change header from "Email" to "Username" and display the local part before `@prottoy.local`.
+- **Create-admin dialog**: rename the "Email" field to "Username", switch input from `type="email"` to a normal text input, and send `username` to the `create-admin` edge function (it currently incorrectly sends `email`).
+- **Reset-password dialog**: update the description to reference the user’s username.
+- **Delete confirmation**: reference username instead of raw email.
+- **Success toasts**: show username where email is currently shown.
 
-## Changes
+### 2. Add a password view icon to the reset-password dialog
+- Reuse the same Eye/EyeOff toggle pattern already used on the login page (`Auth.tsx`).
+- Toggle the reset-password input between `type="password"` and `type="text"`.
 
-### 1. `src/hooks/useAuth.tsx`
-- Add a `profileLoaded: boolean` state, exposed via the context.
-- Reset it to `false` whenever auth state changes to a signed-in user.
-- After the `user_roles` + `admin_profiles` queries both resolve (even when they return no rows), set it to `true`.
-- When there is no user, set `profileLoaded = true`.
+### Files to edit
+- `src/pages/Users.tsx` — only file changed.
 
-### 2. `src/components/ProtectedRoute.tsx`
-- Replace the `adminProfile === null` loading check with `user && !profileLoaded`.
-- If `!canAccessApp`, redirect to `/auth` (Auth page already signs the stale session out and shows a message).
-
-## Result
-- Old `opunurullah@gmail.com` session gets bounced to `/auth`, which signs it out and shows the "account has been deactivated / no access" message.
-- You can then log in as `nurullah` / `Nurullah@2923` and reach the dashboard.
-- No DB or business-logic changes — frontend only.
+### No database migrations, no edge-function changes.
+All data stays as-is; username is derived from the stored synthetic email in the frontend.

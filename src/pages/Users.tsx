@@ -18,12 +18,26 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, MoreVertical, Plus, ShieldCheck } from "lucide-react";
+import { Loader2, MoreVertical, Plus, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { safeErrorMessage } from "@/lib/errors";
 import { format } from "date-fns";
 
+const USERNAME_DOMAIN = "prottoy.local";
+
+const usernameToDisplay = (email: string | null) => {
+  if (!email) return "—";
+  const at = email.indexOf("@");
+  return at > 0 ? email.slice(0, at) : email;
+};
+
 const createSchema = z.object({
-  email: z.string().trim().email("Invalid email").max(255),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters")
+    .max(50)
+    .regex(/^[a-z0-9_.-]+$/, "Use letters, numbers, dot, dash, or underscore"),
   full_name: z.string().trim().min(1, "Name required").max(200),
   password: z.string().min(8, "At least 8 characters").max(72),
 });
@@ -44,12 +58,14 @@ export default function UsersPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
 
   const [resetTarget, setResetTarget] = useState<AdminRow | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -79,7 +95,7 @@ export default function UsersPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = createSchema.safeParse({ email, full_name: fullName, password });
+    const parsed = createSchema.safeParse({ username, full_name: fullName, password });
     if (!parsed.success) {
       toast({ title: "Invalid input", description: parsed.error.errors[0].message, variant: "destructive" });
       return;
@@ -95,8 +111,9 @@ export default function UsersPage() {
       });
       return;
     }
-    toast({ title: "Admin created", description: `${parsed.data.email} can now sign in.` });
-    setEmail(""); setFullName(""); setPassword("");
+    toast({ title: "Admin created", description: `${parsed.data.username} can now sign in.` });
+    setUsername(""); setFullName(""); setPassword("");
+    setShowCreatePassword(false);
     setCreateOpen(false);
     load();
   };
@@ -129,6 +146,7 @@ export default function UsersPage() {
     if (ok) {
       setResetTarget(null);
       setNewPassword("");
+      setShowResetPassword(false);
     }
   };
 
@@ -148,7 +166,7 @@ export default function UsersPage() {
               <DialogHeader>
                 <DialogTitle>Create admin account</DialogTitle>
                 <DialogDescription>
-                  Share the email and password with the new admin. They can sign in directly — no email verification required.
+                  Share the username and password with the new admin. They can sign in directly — no email verification required.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
@@ -157,12 +175,36 @@ export default function UsersPage() {
                   <Input id="ca-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ca-email">Email</Label>
-                  <Input id="ca-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Label htmlFor="ca-username">Username</Label>
+                  <Input
+                    id="ca-username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ca-password">Password (min 8 chars)</Label>
-                  <Input id="ca-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <div className="relative">
+                    <Input
+                      id="ca-password"
+                      type={showCreatePassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showCreatePassword ? "Hide password" : "Show password"}
+                      tabIndex={-1}
+                    >
+                      {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={submitting}>
@@ -191,7 +233,7 @@ export default function UsersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead>Username</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -202,10 +244,11 @@ export default function UsersPage() {
                   {rows.map((r) => {
                     const isSuper = r.roles.includes("super_admin");
                     const isSelf = r.user_id === currentUser?.id;
+                    const uname = usernameToDisplay(r.email);
                     return (
                       <TableRow key={r.user_id}>
                         <TableCell className="font-medium">{r.full_name ?? "—"}{isSelf && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}</TableCell>
-                        <TableCell>{r.email}</TableCell>
+                        <TableCell>{uname}</TableCell>
                         <TableCell>
                           {isSuper ? (
                             <Badge className="gap-1"><ShieldCheck className="h-3 w-3" />Super admin</Badge>
@@ -258,7 +301,7 @@ export default function UsersPage() {
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     onClick={() => {
-                                      if (confirm(`Delete ${r.email}? This cannot be undone.`)) {
+                                      if (confirm(`Delete ${uname}? This cannot be undone.`)) {
                                         doAction("delete", r.user_id);
                                       }
                                     }}
@@ -281,18 +324,45 @@ export default function UsersPage() {
         </Card>
       </div>
 
-      <Dialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
+      <Dialog
+        open={!!resetTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setResetTarget(null);
+            setNewPassword("");
+            setShowResetPassword(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset password</DialogTitle>
             <DialogDescription>
-              Set a new password for {resetTarget?.email}. Share it with them securely.
+              Set a new password for {usernameToDisplay(resetTarget?.email ?? null)}. Share it with them securely.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="rp-pw">New password (min 8 chars)</Label>
-              <Input id="rp-pw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              <div className="relative">
+                <Input
+                  id="rp-pw"
+                  type={showResetPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                  aria-label={showResetPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit">Update password</Button>
