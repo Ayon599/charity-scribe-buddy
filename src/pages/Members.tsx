@@ -119,7 +119,7 @@ export default function Members() {
       supabase.from("members").select("*").order("member_no", { ascending: true }),
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
       supabase.from("member_member_types").select("member_id, member_type_id"),
-      supabase.from("funds").select("id,name"),
+      supabase.from("funds").select("id,name,is_one_time"),
       supabase.from("member_fund_subscriptions").select("member_id, fund_id, monthly_amount, is_active").eq("is_active", true),
     ]);
     if (mRes.error) toast({ title: "Failed to load members", description: safeErrorMessage(mRes.error), variant: "destructive" });
