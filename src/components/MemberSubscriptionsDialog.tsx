@@ -9,7 +9,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { safeErrorMessage } from "@/lib/errors";
 
-type Fund = { id: string; name: string; code: string };
+type Fund = { id: string; name: string; code: string; is_one_time: boolean };
 type SubRow = {
   id: string;
   fund_id: string;
@@ -52,7 +52,7 @@ export function MemberSubscriptionsDialog({
     setLoading(true);
     const today = new Date().toISOString().slice(0, 10);
     const [fRes, sRes] = await Promise.all([
-      supabase.from("funds").select("id,name,code").eq("is_active", true).order("sort_order"),
+      supabase.from("funds").select("id,name,code,is_one_time").eq("is_active", true).order("sort_order"),
       supabase.from("member_fund_subscriptions").select("*").eq("member_id", memberId!),
     ]);
     if (fRes.error) toast({ title: "Failed to load funds", description: safeErrorMessage(fRes.error), variant: "destructive" });
@@ -135,7 +135,7 @@ export function MemberSubscriptionsDialog({
             <div className="grid grid-cols-12 gap-2 px-2 text-xs text-muted-foreground">
               <div className="col-span-1"></div>
               <div className="col-span-5">Fund</div>
-              <div className="col-span-3 text-right">Monthly (৳)</div>
+              <div className="col-span-3 text-right">Amount (৳)</div>
               <div className="col-span-3">Start date</div>
             </div>
             {funds.map((f) => {
@@ -152,9 +152,15 @@ export function MemberSubscriptionsDialog({
                     />
                   </div>
                   <div className="col-span-5">
-                    <div className="text-sm font-medium">{f.name}</div>
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      {f.name}
+                      {f.is_one_time && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">One-time</span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{f.code}</div>
                   </div>
+
                   <div className="col-span-3">
                     <Input
                       type="number"

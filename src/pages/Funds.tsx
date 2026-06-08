@@ -35,6 +35,7 @@ const fundSchema = z.object({
   description: z.string().trim().max(500).optional().or(z.literal("")),
   sort_order: z.coerce.number().int().min(0).max(9999),
   is_active: z.boolean(),
+  is_one_time: z.boolean(),
 });
 
 type FormValues = z.infer<typeof fundSchema>;
@@ -45,7 +46,9 @@ const empty: FormValues = {
   description: "",
   sort_order: 0,
   is_active: true,
+  is_one_time: false,
 };
+
 
 export default function Funds() {
   const [funds, setFunds] = useState<Fund[]>([]);
@@ -115,9 +118,11 @@ export default function Funds() {
       description: f.description ?? "",
       sort_order: f.sort_order,
       is_active: f.is_active,
+      is_one_time: (f as Fund & { is_one_time?: boolean }).is_one_time ?? false,
     });
     setDialogOpen(true);
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -134,7 +139,9 @@ export default function Funds() {
       description: v.description || null,
       sort_order: v.sort_order,
       is_active: v.is_active,
+      is_one_time: v.is_one_time,
     };
+
     const { error } = editing
       ? await supabase.from("funds").update(payload).eq("id", editing.id)
       : await supabase.from("funds").insert(payload);
@@ -183,13 +190,21 @@ export default function Funds() {
                     <TableRow key={f.id}>
                       <TableCell className="font-mono">{f.sort_order}</TableCell>
                       <TableCell className="font-mono text-xs">{f.code}</TableCell>
-                      <TableCell className="font-medium">{f.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{f.name}</span>
+                          {(f as Fund & { is_one_time?: boolean }).is_one_time && (
+                            <Badge variant="secondary">One-time</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm max-w-xs truncate">
                         {f.description ?? "—"}
                       </TableCell>
                       <TableCell>
                         {f.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(f)}>
@@ -251,6 +266,15 @@ export default function Funds() {
               <Switch checked={form.is_active}
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
             </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label>One-time payment</Label>
+                <p className="text-xs text-muted-foreground">Charged once (e.g. registration fee). No monthly dues after the first payment.</p>
+              </div>
+              <Switch checked={form.is_one_time}
+                onCheckedChange={(v) => setForm({ ...form, is_one_time: v })} />
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting}>
