@@ -190,13 +190,21 @@ export default function Funds() {
                     <TableRow key={f.id}>
                       <TableCell className="font-mono">{f.sort_order}</TableCell>
                       <TableCell className="font-mono text-xs">{f.code}</TableCell>
-                      <TableCell className="font-medium">{f.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{f.name}</span>
+                          {(f as Fund & { is_one_time?: boolean }).is_one_time && (
+                            <Badge variant="secondary">One-time</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm max-w-xs truncate">
                         {f.description ?? "—"}
                       </TableCell>
                       <TableCell>
                         {f.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
                       </TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(f)}>
