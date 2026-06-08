@@ -135,7 +135,7 @@ export function MemberSubscriptionsDialog({
             <div className="grid grid-cols-12 gap-2 px-2 text-xs text-muted-foreground">
               <div className="col-span-1"></div>
               <div className="col-span-5">Fund</div>
-              <div className="col-span-3 text-right">Monthly (৳)</div>
+              <div className="col-span-3 text-right">Amount (৳)</div>
               <div className="col-span-3">Start date</div>
             </div>
             {funds.map((f) => {
