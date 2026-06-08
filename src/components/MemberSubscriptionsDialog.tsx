@@ -9,7 +9,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { safeErrorMessage } from "@/lib/errors";
 
-type Fund = { id: string; name: string; code: string };
+type Fund = { id: string; name: string; code: string; is_one_time: boolean };
 type SubRow = {
   id: string;
   fund_id: string;
