@@ -388,7 +388,7 @@ export default function Members() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono">
-                        ৳{(memberSubs.get(m.id) ?? []).reduce((sum, s) => sum + s.monthly_amount, 0).toLocaleString()}
+                        ৳{(memberSubs.get(m.id) ?? []).filter((s) => !oneTimeFundIds.has(s.fund_id)).reduce((sum, s) => sum + s.monthly_amount, 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         {m.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
