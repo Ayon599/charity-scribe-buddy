@@ -105,6 +105,7 @@ export default function Members() {
   const [memberTypeIds, setMemberTypeIds] = useState<Map<string, Set<string>>>(new Map());
   const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
   const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
+  const [oneTimeFundIds, setOneTimeFundIds] = useState<Set<string>>(new Set());
   const [memberSubs, setMemberSubs] = useState<Map<string, { fund_id: string; monthly_amount: number }[]>>(new Map());
 
   useEffect(() => {
