@@ -63,7 +63,7 @@ export default function Dues() {
   async function load() {
     setLoading(true);
     const [fRes, mRes, sRes, tRes] = await Promise.all([
-      supabase.from("funds").select("id,name,code").order("sort_order"),
+      supabase.from("funds").select("id,name,code,is_one_time").order("sort_order"),
       supabase.from("members").select("id,full_name,member_no,is_active").order("member_no"),
       supabase.from("member_fund_subscriptions").select("*").eq("is_active", true),
       supabase.from("transactions").select("member_id,fund_id,amount,txn_date"),
