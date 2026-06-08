@@ -266,6 +266,15 @@ export default function Funds() {
               <Switch checked={form.is_active}
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
             </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label>One-time payment</Label>
+                <p className="text-xs text-muted-foreground">Charged once (e.g. registration fee). No monthly dues after the first payment.</p>
+              </div>
+              <Switch checked={form.is_one_time}
+                onCheckedChange={(v) => setForm({ ...form, is_one_time: v })} />
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting}>
