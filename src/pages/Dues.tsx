@@ -85,22 +85,36 @@ export default function Dues() {
       .filter((s) => memberFilter === ALL || s.member_id === memberFilter)
       .filter((s) => fundFilter === ALL || s.fund_id === fundFilter)
       .map((s) => {
-        const startYm = dateToYm(s.start_date);
-        const effectiveStart = startYm > endMonth ? endMonth : startYm;
-        const months = monthsBetween(effectiveStart, endMonth);
-        const expected = months * s.monthly_amount;
-        const paid = txns
-          .filter(
-            (t) =>
-              t.member_id === s.member_id &&
-              t.fund_id === s.fund_id &&
-              dateToYm(t.txn_date) <= endMonth &&
-              dateToYm(t.txn_date) >= startYm
-          )
-          .reduce((sum, t) => sum + t.amount, 0);
-        const due = expected - paid;
-        const member = memberMap.get(s.member_id);
         const fund = fundMap.get(s.fund_id);
+        const member = memberMap.get(s.member_id);
+        const startYm = dateToYm(s.start_date);
+        const isOneTime = !!fund?.is_one_time;
+
+        let months: number;
+        let expected: number;
+        let paid: number;
+        if (isOneTime) {
+          months = 1;
+          expected = s.monthly_amount;
+          paid = txns
+            .filter((t) => t.member_id === s.member_id && t.fund_id === s.fund_id)
+            .reduce((sum, t) => sum + t.amount, 0);
+        } else {
+          const effectiveStart = startYm > endMonth ? endMonth : startYm;
+          months = monthsBetween(effectiveStart, endMonth);
+          expected = months * s.monthly_amount;
+          paid = txns
+            .filter(
+              (t) =>
+                t.member_id === s.member_id &&
+                t.fund_id === s.fund_id &&
+                dateToYm(t.txn_date) <= endMonth &&
+                dateToYm(t.txn_date) >= startYm
+            )
+            .reduce((sum, t) => sum + t.amount, 0);
+        }
+        const rawDue = expected - paid;
+        const due = isOneTime ? Math.max(rawDue, 0) : rawDue;
         return {
           key: s.id,
           memberNo: member?.member_no ?? 0,
@@ -113,6 +127,7 @@ export default function Dues() {
           due,
         };
       })
+
       .sort((a, b) => a.memberNo - b.memberNo || a.fundName.localeCompare(b.fundName));
   }, [subs, txns, memberFilter, fundFilter, endMonth, memberMap, fundMap]);
 
