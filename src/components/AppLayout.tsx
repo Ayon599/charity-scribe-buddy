@@ -87,7 +87,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         </nav>
         <div className="border-t p-3">
-          <p className="mb-2 truncate px-3 text-xs text-muted-foreground">{user?.email}</p>
+          <p className="mb-2 truncate px-3 text-xs text-muted-foreground">
+            {(user?.user_metadata as { full_name?: string } | undefined)?.full_name ?? user?.email}
+          </p>
           <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out

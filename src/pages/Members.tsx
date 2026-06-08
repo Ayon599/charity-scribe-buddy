@@ -105,6 +105,7 @@ export default function Members() {
   const [memberTypeIds, setMemberTypeIds] = useState<Map<string, Set<string>>>(new Map());
   const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
   const [fundsMap, setFundsMap] = useState<Map<string, string>>(new Map());
+  const [oneTimeFundIds, setOneTimeFundIds] = useState<Set<string>>(new Set());
   const [memberSubs, setMemberSubs] = useState<Map<string, { fund_id: string; monthly_amount: number }[]>>(new Map());
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export default function Members() {
       supabase.from("members").select("*").order("member_no", { ascending: true }),
       supabase.from("member_types").select("id,name,is_active,sort_order").order("sort_order").order("name"),
       supabase.from("member_member_types").select("member_id, member_type_id"),
-      supabase.from("funds").select("id,name"),
+      supabase.from("funds").select("id,name,is_one_time"),
       supabase.from("member_fund_subscriptions").select("member_id, fund_id, monthly_amount, is_active").eq("is_active", true),
     ]);
     if (mRes.error) toast({ title: "Failed to load members", description: safeErrorMessage(mRes.error), variant: "destructive" });
@@ -132,6 +133,7 @@ export default function Members() {
     }
     setMemberTypeIds(map);
     setFundsMap(new Map((fRes.data ?? []).map((f: any) => [f.id, f.name])));
+    setOneTimeFundIds(new Set((fRes.data ?? []).filter((f: any) => f.is_one_time).map((f: any) => f.id)));
     const sMap = new Map<string, { fund_id: string; monthly_amount: number }[]>();
     for (const s of sRes.data ?? []) {
       const arr = sMap.get(s.member_id) ?? [];
@@ -386,7 +388,7 @@ export default function Members() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono">
-                        ৳{(memberSubs.get(m.id) ?? []).reduce((sum, s) => sum + s.monthly_amount, 0).toLocaleString()}
+                        ৳{(memberSubs.get(m.id) ?? []).filter((s) => !oneTimeFundIds.has(s.fund_id)).reduce((sum, s) => sum + s.monthly_amount, 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         {m.is_active ? <Badge>Active</Badge> : <Badge variant="outline">Inactive</Badge>}
