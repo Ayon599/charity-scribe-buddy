@@ -139,7 +139,9 @@ export default function Funds() {
       description: v.description || null,
       sort_order: v.sort_order,
       is_active: v.is_active,
+      is_one_time: v.is_one_time,
     };
+
     const { error } = editing
       ? await supabase.from("funds").update(payload).eq("id", editing.id)
       : await supabase.from("funds").insert(payload);
