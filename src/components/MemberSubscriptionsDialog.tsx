@@ -152,9 +152,15 @@ export function MemberSubscriptionsDialog({
                     />
                   </div>
                   <div className="col-span-5">
-                    <div className="text-sm font-medium">{f.name}</div>
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      {f.name}
+                      {f.is_one_time && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">One-time</span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{f.code}</div>
                   </div>
+
                   <div className="col-span-3">
                     <Input
                       type="number"
