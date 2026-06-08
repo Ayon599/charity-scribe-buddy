@@ -118,9 +118,11 @@ export default function Funds() {
       description: f.description ?? "",
       sort_order: f.sort_order,
       is_active: f.is_active,
+      is_one_time: (f as Fund & { is_one_time?: boolean }).is_one_time ?? false,
     });
     setDialogOpen(true);
   }
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
