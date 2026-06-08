@@ -13,7 +13,7 @@ import { formatBDT } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
 import { safeErrorMessage } from "@/lib/errors";
 
-type Fund = { id: string; name: string; code: string };
+type Fund = { id: string; name: string; code: string; is_one_time: boolean };
 type Member = { id: string; full_name: string; member_no: number; is_active: boolean };
 type Subscription = {
   id: string;
