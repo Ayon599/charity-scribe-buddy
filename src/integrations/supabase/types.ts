@@ -149,6 +149,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_one_time: boolean
           name: string
           sort_order: number
           updated_at: string
@@ -159,6 +160,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_one_time?: boolean
           name: string
           sort_order?: number
           updated_at?: string
@@ -169,6 +171,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_one_time?: boolean
           name?: string
           sort_order?: number
           updated_at?: string
