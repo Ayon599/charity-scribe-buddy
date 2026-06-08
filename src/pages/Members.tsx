@@ -133,6 +133,7 @@ export default function Members() {
     }
     setMemberTypeIds(map);
     setFundsMap(new Map((fRes.data ?? []).map((f: any) => [f.id, f.name])));
+    setOneTimeFundIds(new Set((fRes.data ?? []).filter((f: any) => f.is_one_time).map((f: any) => f.id)));
     const sMap = new Map<string, { fund_id: string; monthly_amount: number }[]>();
     for (const s of sRes.data ?? []) {
       const arr = sMap.get(s.member_id) ?? [];
