@@ -35,6 +35,7 @@ const fundSchema = z.object({
   description: z.string().trim().max(500).optional().or(z.literal("")),
   sort_order: z.coerce.number().int().min(0).max(9999),
   is_active: z.boolean(),
+  is_one_time: z.boolean(),
 });
 
 type FormValues = z.infer<typeof fundSchema>;
@@ -45,7 +46,9 @@ const empty: FormValues = {
   description: "",
   sort_order: 0,
   is_active: true,
+  is_one_time: false,
 };
+
 
 export default function Funds() {
   const [funds, setFunds] = useState<Fund[]>([]);
