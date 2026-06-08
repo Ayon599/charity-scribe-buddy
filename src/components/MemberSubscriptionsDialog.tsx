@@ -52,7 +52,7 @@ export function MemberSubscriptionsDialog({
     setLoading(true);
     const today = new Date().toISOString().slice(0, 10);
     const [fRes, sRes] = await Promise.all([
-      supabase.from("funds").select("id,name,code").eq("is_active", true).order("sort_order"),
+      supabase.from("funds").select("id,name,code,is_one_time").eq("is_active", true).order("sort_order"),
       supabase.from("member_fund_subscriptions").select("*").eq("member_id", memberId!),
     ]);
     if (fRes.error) toast({ title: "Failed to load funds", description: safeErrorMessage(fRes.error), variant: "destructive" });
