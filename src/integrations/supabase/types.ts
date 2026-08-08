@@ -628,6 +628,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_reg_and_monthly: {
+        Args: { p_batch_id?: string; p_file_name?: string; p_rows: Json }
+        Returns: Json
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
