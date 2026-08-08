@@ -13,6 +13,7 @@ import {
   Tags,
   Receipt,
   ShieldCheck,
+  Scale,
   Droplet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
