@@ -1,2 +1,0 @@
-ALTER TABLE public.funds ADD COLUMN IF NOT EXISTS is_one_time boolean NOT NULL DEFAULT false;
-UPDATE public.funds SET is_one_time = true WHERE lower(name) LIKE '%registration%' OR lower(code) LIKE '%reg%';

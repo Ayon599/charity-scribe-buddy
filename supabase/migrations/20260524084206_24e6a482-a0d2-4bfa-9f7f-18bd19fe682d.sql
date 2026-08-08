@@ -1,1 +1,0 @@
-ALTER TABLE public.members ADD COLUMN reference_person text;
