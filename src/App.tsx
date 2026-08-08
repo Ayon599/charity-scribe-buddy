@@ -42,6 +42,7 @@ const App = () => (
             <Route path="/member-types" element={<ProtectedRoute><MemberTypes /></ProtectedRoute>} />
             <Route path="/dues" element={<ProtectedRoute><Dues /></ProtectedRoute>} />
             <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
+            <Route path="/bulk-import" element={<ProtectedRoute><BulkImport /></ProtectedRoute>} />
 
             <Route path="/blood-donors" element={<ProtectedRoute><BloodDonors /></ProtectedRoute>} />
             <Route
