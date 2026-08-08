@@ -128,7 +128,7 @@ export function parseRegAndMonthly(fileName: string, data: ArrayBuffer): ParseRe
     };
   }
 
-  const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, cellDates: true, blankrows: false });
+  const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, blankrows: false });
   if (grid.length < 2) {
     return { fileName, monthHeaders: [], rows: [], issues: [{ level: "error", excelRow: null, message: "Sheet has no data rows." }] };
   }
