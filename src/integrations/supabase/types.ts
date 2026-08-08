@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          file_name: string | null
+          id: string
+          import_batch_id: string | null
+          records_processed: number
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          file_name?: string | null
+          id?: string
+          import_batch_id?: string | null
+          records_processed?: number
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          file_name?: string | null
+          id?: string
+          import_batch_id?: string | null
+          records_processed?: number
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       blood_donors: {
         Row: {
           blood_group: Database["public"]["Enums"]["blood_group"]
@@ -412,6 +448,82 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "receipts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          for_month: string | null
+          fund_id: string | null
+          fund_type: string | null
+          id: string
+          import_batch_id: string | null
+          member_id: string | null
+          new_amount: number | null
+          new_data: Json | null
+          previous_amount: number | null
+          previous_data: Json | null
+          source_file: string | null
+          transaction_id: string | null
+          updated_by_user_id: string | null
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          for_month?: string | null
+          fund_id?: string | null
+          fund_type?: string | null
+          id?: string
+          import_batch_id?: string | null
+          member_id?: string | null
+          new_amount?: number | null
+          new_data?: Json | null
+          previous_amount?: number | null
+          previous_data?: Json | null
+          source_file?: string | null
+          transaction_id?: string | null
+          updated_by_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          for_month?: string | null
+          fund_id?: string | null
+          fund_type?: string | null
+          id?: string
+          import_batch_id?: string | null
+          member_id?: string | null
+          new_amount?: number | null
+          new_data?: Json | null
+          previous_amount?: number | null
+          previous_data?: Json | null
+          source_file?: string | null
+          transaction_id?: string | null
+          updated_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_audit_logs_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_audit_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_audit_logs_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
