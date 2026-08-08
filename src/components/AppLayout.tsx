@@ -13,6 +13,7 @@ import {
   Tags,
   Receipt,
   ShieldCheck,
+  Scale,
   Droplet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ const navItems = [
   { to: "/income", label: "Income", icon: ArrowDownCircle },
   { to: "/expenses", label: "Expenses", icon: ArrowUpCircle },
   { to: "/dues", label: "Dues", icon: Receipt },
+  { to: "/reconciliation", label: "Reconciliation", icon: Scale },
+
   { to: "/blood-donors", label: "Blood Donors", icon: Droplet },
 ];
 
