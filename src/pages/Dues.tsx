@@ -122,10 +122,15 @@ export default function Dues() {
           fundName: fund?.name ?? "—",
           monthly: isOneTime ? 0 : s.monthly_amount,
           months: isOneTime ? 0 : months,
+          joiningYm: startYm,
+          // Section 8 — presentation-only joining-month breakdown.
+          joiningReg: isOneTime ? s.monthly_amount : 0,
+          joiningMonthly: isOneTime ? 0 : s.monthly_amount,
           expected,
           paid,
           due,
         };
+
       })
 
       .sort((a, b) => a.memberNo - b.memberNo || a.fundName.localeCompare(b.fundName));
