@@ -216,8 +216,10 @@ export default function Dues() {
                     <TableHead className="w-20">No.</TableHead>
                     <TableHead>Member</TableHead>
                     <TableHead>Fund</TableHead>
+                    <TableHead>Joining month</TableHead>
                     <TableHead className="text-right">Monthly</TableHead>
                     <TableHead className="text-right">Months</TableHead>
+
                     <TableHead className="text-right">Expected</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
                     <TableHead className="text-right">Due</TableHead>
