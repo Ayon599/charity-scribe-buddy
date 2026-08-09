@@ -95,6 +95,10 @@ export default function Income() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [fundFilter, setFundFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "member">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(empty);
