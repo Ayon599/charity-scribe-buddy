@@ -352,6 +352,28 @@ export default function Income() {
                   {funds.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <Input
+                type="month"
+                className="w-full sm:w-40"
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                aria-label="Target month"
+              />
+              <Select value={`${sortBy}:${sortDir}`} onValueChange={(v) => {
+                const [by, dir] = v.split(":");
+                setSortBy(by as "date" | "amount" | "member");
+                setSortDir(dir as "asc" | "desc");
+              }}>
+                <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date:desc">Date — newest first</SelectItem>
+                  <SelectItem value="date:asc">Date — oldest first</SelectItem>
+                  <SelectItem value="amount:desc">Amount — high to low</SelectItem>
+                  <SelectItem value="amount:asc">Amount — low to high</SelectItem>
+                  <SelectItem value="member:asc">Donor / member A→Z</SelectItem>
+                </SelectContent>
+              </Select>
+
             </div>
 
             <div className="rounded-md border">
