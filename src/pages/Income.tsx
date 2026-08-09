@@ -134,8 +134,10 @@ export default function Income() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       if (fundFilter !== "all" && r.fund_id !== fundFilter) return false;
+      // Section 1 / 12.5 — Target Month filter.
+      if (monthFilter && String(r.txn_date).slice(0, 7) !== monthFilter) return false;
       if (!q) return true;
       return (
         (r.donor_name ?? "").toLowerCase().includes(q) ||
@@ -144,7 +146,16 @@ export default function Income() {
         (r.fund?.name ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, fundFilter]);
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...list].sort((a, b) => {
+      if (sortBy === "amount") return (Number(a.amount) - Number(b.amount)) * dir;
+      if (sortBy === "member") {
+        return (a.member?.full_name ?? a.donor_name ?? "").localeCompare(b.member?.full_name ?? b.donor_name ?? "") * dir;
+      }
+      return String(a.txn_date).localeCompare(String(b.txn_date)) * dir;
+    });
+  }, [rows, search, fundFilter, monthFilter, sortBy, sortDir]);
+
 
   const totals = useMemo(
     () => filtered.reduce((s, r) => s + Number(r.amount), 0),
