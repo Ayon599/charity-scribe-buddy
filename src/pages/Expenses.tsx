@@ -76,6 +76,10 @@ export default function Expenses() {
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
+    // Section 12.1 — reset any open modal state when this route mounts.
+    setDialogOpen(false);
+    setDeleteTarget(null);
+
     void load();
   }, []);
 
@@ -300,8 +304,12 @@ export default function Expenses() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="amount">Amount (৳) *</Label>
-                <Input id="amount" type="number" min={0} step="0.01" value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} required />
+                <Input id="amount" type="number" min={0} step="0.01"
+                  value={form.amount === 0 ? "" : form.amount}
+                  placeholder="0"
+                  onFocus={(e) => e.currentTarget.select()}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value === "" ? 0 : Number(e.target.value) })} required />
+
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="category">Category</Label>

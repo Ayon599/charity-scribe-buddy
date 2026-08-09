@@ -95,6 +95,10 @@ export default function Income() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [fundFilter, setFundFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "member">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormValues>(empty);
@@ -106,6 +110,12 @@ export default function Income() {
 
   useEffect(() => {
     document.title = "Income | Prottoy Foundation";
+    // Section 12.1 — reset any open modal state when this route mounts.
+    setDialogOpen(false);
+    setEditing(null);
+    setDeleteTarget(null);
+    setForm(empty);
+
     void load();
   }, []);
 
@@ -134,8 +144,10 @@ export default function Income() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       if (fundFilter !== "all" && r.fund_id !== fundFilter) return false;
+      // Section 1 / 12.5 — Target Month filter.
+      if (monthFilter && String(r.txn_date).slice(0, 7) !== monthFilter) return false;
       if (!q) return true;
       return (
         (r.donor_name ?? "").toLowerCase().includes(q) ||
@@ -144,7 +156,16 @@ export default function Income() {
         (r.fund?.name ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, fundFilter]);
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...list].sort((a, b) => {
+      if (sortBy === "amount") return (Number(a.amount) - Number(b.amount)) * dir;
+      if (sortBy === "member") {
+        return (a.member?.full_name ?? a.donor_name ?? "").localeCompare(b.member?.full_name ?? b.donor_name ?? "") * dir;
+      }
+      return String(a.txn_date).localeCompare(String(b.txn_date)) * dir;
+    });
+  }, [rows, search, fundFilter, monthFilter, sortBy, sortDir]);
+
 
   const totals = useMemo(
     () => filtered.reduce((s, r) => s + Number(r.amount), 0),
@@ -337,6 +358,28 @@ export default function Income() {
                   {funds.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <Input
+                type="month"
+                className="w-full sm:w-40"
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                aria-label="Target month"
+              />
+              <Select value={`${sortBy}:${sortDir}`} onValueChange={(v) => {
+                const [by, dir] = v.split(":");
+                setSortBy(by as "date" | "amount" | "member");
+                setSortDir(dir as "asc" | "desc");
+              }}>
+                <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date:desc">Date — newest first</SelectItem>
+                  <SelectItem value="date:asc">Date — oldest first</SelectItem>
+                  <SelectItem value="amount:desc">Amount — high to low</SelectItem>
+                  <SelectItem value="amount:asc">Amount — low to high</SelectItem>
+                  <SelectItem value="member:asc">Donor / member A→Z</SelectItem>
+                </SelectContent>
+              </Select>
+
             </div>
 
             <div className="rounded-md border">
@@ -462,8 +505,12 @@ export default function Income() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="amount">Amount (৳) *</Label>
-                <Input id="amount" type="number" min={0} step="0.01" value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} required />
+                <Input id="amount" type="number" min={0} step="0.01"
+                  value={form.amount === 0 ? "" : form.amount}
+                  placeholder="0"
+                  onFocus={(e) => e.currentTarget.select()}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value === "" ? 0 : Number(e.target.value) })} required />
+
               </div>
               <div className="grid gap-2">
                 <Label>Payment method *</Label>
