@@ -76,6 +76,10 @@ export default function Expenses() {
 
   useEffect(() => {
     document.title = "Expenses | Prottoy Foundation";
+    // Section 12.1 — reset any open modal state when this route mounts.
+    setDialogOpen(false);
+    setDeleteTarget(null);
+
     void load();
   }, []);
 
