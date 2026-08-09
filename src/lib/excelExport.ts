@@ -26,6 +26,17 @@ export function monthRange(startYm: string, endYm: string): string[] {
   return out;
 }
 
+/** Section 9 — raw numbers with a Taka display format (never currency strings). */
+export const BDT_FMT = '"৳"#,##0;("৳"#,##0);"-"';
+
+/** Prottoy_Summary_<TargetMonth>_<ExportDate>.xlsx */
+export function exportFileName(targetMonth: string, exportDate = new Date()): string {
+  const stamp = `${exportDate.getFullYear()}-${String(exportDate.getMonth() + 1).padStart(2, "0")}-${String(
+    exportDate.getDate(),
+  ).padStart(2, "0")}`;
+  return `Prottoy_Summary_${targetMonth}_${stamp}.xlsx`;
+}
+
 export function buildRegAndMonthlyWorkbook(members: ExportMember[], months: string[]) {
   const aoa: (string | number | null)[][] = [
     [
@@ -58,11 +69,33 @@ export function buildRegAndMonthlyWorkbook(members: ExportMember[], months: stri
   ];
   ws["!freeze"] = { xSplit: "2", ySplit: "1" };
 
+  // Section 9 formatting: bold header row, centered month columns, ৳ number format.
+  const lastCol = 5 + months.length * 2;
+  for (let c = 0; c < lastCol; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    const cell = ws[ref];
+    if (cell) cell.s = { font: { bold: true }, alignment: { horizontal: c >= 5 ? "center" : "left" } };
+  }
+  for (let r = 1; r <= members.length; r++) {
+    const feeRef = XLSX.utils.encode_cell({ r, c: 4 });
+    if (ws[feeRef] && typeof ws[feeRef].v === "number") ws[feeRef].z = BDT_FMT;
+    for (let i = 0; i < months.length; i++) {
+      const dateRef = XLSX.utils.encode_cell({ r, c: 5 + i * 2 });
+      const amtRef = XLSX.utils.encode_cell({ r, c: 6 + i * 2 });
+      if (ws[dateRef]) ws[dateRef].s = { alignment: { horizontal: "center" } };
+      if (ws[amtRef] && typeof ws[amtRef].v === "number") {
+        ws[amtRef].z = BDT_FMT;
+        ws[amtRef].s = { alignment: { horizontal: "center" } };
+      }
+    }
+  }
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Reg and Monthly");
   return wb;
 }
 
 export function downloadWorkbook(wb: XLSX.WorkBook, fileName: string) {
-  XLSX.writeFile(wb, fileName, { bookType: "xlsx", compression: true });
+  XLSX.writeFile(wb, fileName, { bookType: "xlsx", compression: true, cellStyles: true });
 }
+
