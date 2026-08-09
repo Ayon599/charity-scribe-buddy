@@ -228,7 +228,7 @@ export default function Dues() {
                 <TableBody>
                   {rows.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                         No subscriptions match.
                       </TableCell>
                     </TableRow>
@@ -238,6 +238,12 @@ export default function Dues() {
                       <TableCell className="font-mono">{r.memberNo}</TableCell>
                       <TableCell className="font-medium">{r.memberName}</TableCell>
                       <TableCell>{r.fundName}</TableCell>
+                      <TableCell className="text-xs">
+                        <span className="font-mono">{r.joiningYm}</span>
+                        <span className="ml-1 text-muted-foreground">
+                          (Reg {formatBDT(r.joiningReg)} + Monthly {formatBDT(r.joiningMonthly)})
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.monthly)}</TableCell>
                       <TableCell className="text-right font-mono">{r.months}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.expected)}</TableCell>
@@ -255,7 +261,8 @@ export default function Dues() {
                   ))}
                   {rows.length > 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-right font-semibold">Totals</TableCell>
+                      <TableCell colSpan={6} className="text-right font-semibold">Totals</TableCell>
+
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.expected)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.paid)}</TableCell>
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.due)}</TableCell>
