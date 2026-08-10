@@ -136,13 +136,15 @@ export function MemberSubscriptionsDialog({
               <div className="col-span-1"></div>
               <div className="col-span-5">Fund</div>
               <div className="col-span-3 text-right">Amount (৳)</div>
-              <div className="col-span-3">Start date</div>
+              <div className="col-span-3">Joined from</div>
             </div>
             {funds.map((f) => {
               const s = state[f.id];
               if (!s) return null;
+              const isRegistration = /reg/i.test(f.code) || /registration/i.test(f.name);
               return (
                 <div key={f.id} className="grid grid-cols-12 items-center gap-2 rounded-md border p-2">
+
                   <div className="col-span-1 flex justify-center">
                     <Checkbox
                       checked={s.enabled}
@@ -175,15 +177,30 @@ export function MemberSubscriptionsDialog({
                     />
                   </div>
                   <div className="col-span-3">
-                    <Input
-                      type="date"
-                      disabled={!s.enabled}
-                      value={s.start_date}
-                      onChange={(e) =>
-                        setState({ ...state, [f.id]: { ...s, start_date: e.target.value } })
-                      }
-                    />
+                    {isRegistration ? (
+                      <Input
+                        type="date"
+                        disabled={!s.enabled}
+                        value={s.start_date}
+                        onChange={(e) =>
+                          setState({ ...state, [f.id]: { ...s, start_date: e.target.value } })
+                        }
+                      />
+                    ) : (
+                      <Input
+                        type="month"
+                        disabled={!s.enabled}
+                        value={(s.start_date ?? "").slice(0, 7)}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            [f.id]: { ...s, start_date: e.target.value ? `${e.target.value}-01` : "" },
+                          })
+                        }
+                      />
+                    )}
                   </div>
+
                 </div>
               );
             })}
