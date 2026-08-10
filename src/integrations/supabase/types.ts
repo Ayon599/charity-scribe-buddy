@@ -621,13 +621,6 @@ export type Database = {
     }
     Functions: {
       bootstrap_needed: { Args: never; Returns: boolean }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       import_reg_and_monthly: {
         Args: { p_batch_id?: string; p_file_name?: string; p_rows: Json }
         Returns: Json
