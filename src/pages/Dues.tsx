@@ -115,20 +115,27 @@ export default function Dues() {
         }
         const rawDue = expected - paid;
         const due = isOneTime ? Math.max(rawDue, 0) : rawDue;
+        const monthlyAmount = isOneTime ? 0 : s.monthly_amount;
+        const totalMonths = isOneTime ? 0 : months;
+        const paidMonths = monthlyAmount > 0 ? Math.floor(paid / monthlyAmount) : null;
+        const dueMonths = paidMonths === null ? null : Math.max(totalMonths - paidMonths, 0);
         return {
           key: s.id,
           memberNo: member?.member_no ?? 0,
           memberName: member?.full_name ?? "—",
           fundName: fund?.name ?? "—",
-          monthly: isOneTime ? 0 : s.monthly_amount,
-          months: isOneTime ? 0 : months,
+          monthly: monthlyAmount,
+          months: totalMonths,
           joiningYm: startYm,
+          joiningLabel: ymToDate(startYm).toLocaleString("en-US", { month: "long", year: "numeric" }),
           // Section 8 — presentation-only joining-month breakdown.
           joiningReg: isOneTime ? s.monthly_amount : 0,
           joiningMonthly: isOneTime ? 0 : s.monthly_amount,
           expected,
           paid,
           due,
+          paidMonths,
+          dueMonths,
         };
 
       })
