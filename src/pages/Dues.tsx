@@ -216,26 +216,27 @@ export default function Dues() {
             <CardDescription>{loading ? "Loading…" : `${rows.length} subscription rows`}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-20">No.</TableHead>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Fund</TableHead>
-                    <TableHead>Joining month</TableHead>
-                    <TableHead className="text-right">Monthly</TableHead>
-                    <TableHead className="text-right">Months</TableHead>
-
-                    <TableHead className="text-right">Expected</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
-                    <TableHead className="text-right">Due</TableHead>
+                    <TableHead className="w-20">Member Number</TableHead>
+                    <TableHead>Member Name</TableHead>
+                    <TableHead>Fund Name</TableHead>
+                    <TableHead>Joining Month</TableHead>
+                    <TableHead className="text-right">Monthly Amount</TableHead>
+                    <TableHead className="text-right">Total Month</TableHead>
+                    <TableHead className="text-right">Expected Amount</TableHead>
+                    <TableHead className="text-right">Paid Month</TableHead>
+                    <TableHead className="text-right">Paid Amount</TableHead>
+                    <TableHead className="text-right">Due Month</TableHead>
+                    <TableHead className="text-right">Due Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 && !loading && (
                     <TableRow>
-                      <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                         No subscriptions match.
                       </TableCell>
                     </TableRow>
@@ -246,15 +247,21 @@ export default function Dues() {
                       <TableCell className="font-medium">{r.memberName}</TableCell>
                       <TableCell>{r.fundName}</TableCell>
                       <TableCell className="text-xs">
-                        <span className="font-mono">{r.joiningYm}</span>
-                        <span className="ml-1 text-muted-foreground">
+                        <span className="whitespace-nowrap">{r.joiningLabel}</span>
+                        <span className="ml-1 whitespace-nowrap text-muted-foreground">
                           (Reg {formatBDT(r.joiningReg)} + Monthly {formatBDT(r.joiningMonthly)})
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.monthly)}</TableCell>
                       <TableCell className="text-right font-mono">{r.months}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.expected)}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {r.paidMonths === null ? <span className="text-muted-foreground">—</span> : r.paidMonths}
+                      </TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.paid)}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {r.dueMonths === null ? <span className="text-muted-foreground">—</span> : r.dueMonths}
+                      </TableCell>
                       <TableCell className="text-right font-mono">
                         {r.due > 0 ? (
                           <Badge variant="destructive">{formatBDT(r.due)}</Badge>
@@ -269,9 +276,10 @@ export default function Dues() {
                   {rows.length > 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-right font-semibold">Totals</TableCell>
-
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.expected)}</TableCell>
+                      <TableCell />
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.paid)}</TableCell>
+                      <TableCell />
                       <TableCell className="text-right font-mono font-semibold">{formatBDT(totals.due)}</TableCell>
                     </TableRow>
                   )}
