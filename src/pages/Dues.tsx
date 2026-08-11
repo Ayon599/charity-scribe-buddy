@@ -361,6 +361,7 @@ export default function Dues() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
