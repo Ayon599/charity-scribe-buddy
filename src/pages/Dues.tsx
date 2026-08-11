@@ -246,12 +246,7 @@ export default function Dues() {
                       <TableCell className="font-mono">{r.memberNo}</TableCell>
                       <TableCell className="font-medium">{r.memberName}</TableCell>
                       <TableCell>{r.fundName}</TableCell>
-                      <TableCell className="text-xs">
-                        <span className="whitespace-nowrap">{r.joiningLabel}</span>
-                        <span className="ml-1 whitespace-nowrap text-muted-foreground">
-                          (Reg {formatBDT(r.joiningReg)} + Monthly {formatBDT(r.joiningMonthly)})
-                        </span>
-                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{r.joiningLabel}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.monthly)}</TableCell>
                       <TableCell className="text-right font-mono">{r.months}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.expected)}</TableCell>
