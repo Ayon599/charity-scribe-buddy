@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Image as ImageIcon, FileDown } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -154,6 +156,68 @@ export default function Dues() {
     );
   }, [rows]);
 
+  const captureRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  function exportStamp() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  async function renderCanvas() {
+    const node = captureRef.current;
+    if (!node) throw new Error("Nothing to export");
+    const { default: html2canvas } = await import("html2canvas");
+    const bg = getComputedStyle(document.body).backgroundColor || "#ffffff";
+    return html2canvas(node, {
+      backgroundColor: bg,
+      scale: 2,
+      windowWidth: node.scrollWidth + 48,
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+    });
+  }
+
+  async function handleExportImage() {
+    setExporting(true);
+    try {
+      const canvas = await renderCanvas();
+      const link = document.createElement("a");
+      link.download = `Prottoy_Dues_${endMonth}_${exportStamp()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "Image exported" });
+    } catch (e) {
+      toast({ title: "Export failed", description: safeErrorMessage(e), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleExportPdf() {
+    setExporting(true);
+    try {
+      const canvas = await renderCanvas();
+      const { jsPDF } = await import("jspdf");
+      const landscape = canvas.width >= canvas.height;
+      const pdf = new jsPDF({ orientation: landscape ? "landscape" : "portrait", unit: "pt", format: "a4" });
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const scale = Math.min((pw - margin * 2) / canvas.width, (ph - margin * 2) / canvas.height);
+      const w = canvas.width * scale;
+      const h = canvas.height * scale;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", (pw - w) / 2, margin, w, h);
+      pdf.save(`Prottoy_Dues_${endMonth}_${exportStamp()}.pdf`);
+      toast({ title: "PDF exported" });
+    } catch (e) {
+      toast({ title: "Export failed", description: safeErrorMessage(e), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -211,12 +275,29 @@ export default function Dues() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Dues</CardTitle>
-            <CardDescription>{loading ? "Loading…" : `${rows.length} subscription rows`}</CardDescription>
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <CardTitle>Dues</CardTitle>
+              <CardDescription>{loading ? "Loading…" : `${rows.length} subscription rows`}</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportImage} disabled={exporting || rows.length === 0}>
+                <ImageIcon className="mr-2 h-4 w-4" /> Export image
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || rows.length === 0}>
+                <FileDown className="mr-2 h-4 w-4" /> Export PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
+              <div ref={captureRef} className="min-w-max bg-background p-4">
+                <div className="mb-3">
+                  <p className="text-base font-semibold">Member Dues — up to {new Date(`${endMonth}-01T00:00:00`).toLocaleString("en-US", { month: "long", year: "numeric" })}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {memberFilter === ALL ? "All members" : memberMap.get(memberFilter)?.full_name} · {fundFilter === ALL ? "All funds" : fundMap.get(fundFilter)?.name} · {rows.length} rows
+                  </p>
+                </div>
               <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
@@ -246,12 +327,7 @@ export default function Dues() {
                       <TableCell className="font-mono">{r.memberNo}</TableCell>
                       <TableCell className="font-medium">{r.memberName}</TableCell>
                       <TableCell>{r.fundName}</TableCell>
-                      <TableCell className="text-xs">
-                        <span className="whitespace-nowrap">{r.joiningLabel}</span>
-                        <span className="ml-1 whitespace-nowrap text-muted-foreground">
-                          (Reg {formatBDT(r.joiningReg)} + Monthly {formatBDT(r.joiningMonthly)})
-                        </span>
-                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{r.joiningLabel}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.monthly)}</TableCell>
                       <TableCell className="text-right font-mono">{r.months}</TableCell>
                       <TableCell className="text-right font-mono">{formatBDT(r.expected)}</TableCell>
@@ -285,6 +361,7 @@ export default function Dues() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
