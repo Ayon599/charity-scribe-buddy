@@ -156,6 +156,68 @@ export default function Dues() {
     );
   }, [rows]);
 
+  const captureRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  function exportStamp() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  async function renderCanvas() {
+    const node = captureRef.current;
+    if (!node) throw new Error("Nothing to export");
+    const { default: html2canvas } = await import("html2canvas");
+    const bg = getComputedStyle(document.body).backgroundColor || "#ffffff";
+    return html2canvas(node, {
+      backgroundColor: bg,
+      scale: 2,
+      windowWidth: node.scrollWidth + 48,
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+    });
+  }
+
+  async function handleExportImage() {
+    setExporting(true);
+    try {
+      const canvas = await renderCanvas();
+      const link = document.createElement("a");
+      link.download = `Prottoy_Dues_${endMonth}_${exportStamp()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "Image exported" });
+    } catch (e) {
+      toast({ title: "Export failed", description: safeErrorMessage(e), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleExportPdf() {
+    setExporting(true);
+    try {
+      const canvas = await renderCanvas();
+      const { jsPDF } = await import("jspdf");
+      const landscape = canvas.width >= canvas.height;
+      const pdf = new jsPDF({ orientation: landscape ? "landscape" : "portrait", unit: "pt", format: "a4" });
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const scale = Math.min((pw - margin * 2) / canvas.width, (ph - margin * 2) / canvas.height);
+      const w = canvas.width * scale;
+      const h = canvas.height * scale;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", (pw - w) / 2, margin, w, h);
+      pdf.save(`Prottoy_Dues_${endMonth}_${exportStamp()}.pdf`);
+      toast({ title: "PDF exported" });
+    } catch (e) {
+      toast({ title: "Export failed", description: safeErrorMessage(e), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+
   return (
     <AppLayout>
       <div className="space-y-6">
