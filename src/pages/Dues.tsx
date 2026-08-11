@@ -275,12 +275,29 @@ export default function Dues() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Dues</CardTitle>
-            <CardDescription>{loading ? "Loading…" : `${rows.length} subscription rows`}</CardDescription>
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <CardTitle>Dues</CardTitle>
+              <CardDescription>{loading ? "Loading…" : `${rows.length} subscription rows`}</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportImage} disabled={exporting || rows.length === 0}>
+                <ImageIcon className="mr-2 h-4 w-4" /> Export image
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting || rows.length === 0}>
+                <FileDown className="mr-2 h-4 w-4" /> Export PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
+              <div ref={captureRef} className="min-w-max bg-background p-4">
+                <div className="mb-3">
+                  <p className="text-base font-semibold">Member Dues — up to {new Date(`${endMonth}-01T00:00:00`).toLocaleString("en-US", { month: "long", year: "numeric" })}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {memberFilter === ALL ? "All members" : memberMap.get(memberFilter)?.full_name} · {fundFilter === ALL ? "All funds" : fundMap.get(fundFilter)?.name} · {rows.length} rows
+                  </p>
+                </div>
               <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
