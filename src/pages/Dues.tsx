@@ -334,15 +334,15 @@ export default function Dues() {
                       <TableCell className="text-right font-mono">
                         {r.paidMonths === null ? <span className="text-muted-foreground">—</span> : r.paidMonths}
                       </TableCell>
-                      <TableCell className="text-right font-mono">{formatBDT(r.paid)}</TableCell>
+                      <TableCell className={`text-right font-mono ${r.paid > 0 ? "text-green-700" : ""}`}>{formatBDT(r.paid)}</TableCell>
                       <TableCell className="text-right font-mono">
                         {r.dueMonths === null ? <span className="text-muted-foreground">—</span> : r.dueMonths}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {r.due > 0 ? (
-                          <Badge variant="destructive">{formatBDT(r.due)}</Badge>
+                          <span className="text-red-700">{formatBDT(r.due)}</span>
                         ) : r.due < 0 ? (
-                          <Badge variant="secondary">+{formatBDT(-r.due)}</Badge>
+                          <span className="text-green-700">+{formatBDT(-r.due)}</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
