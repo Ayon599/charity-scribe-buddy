@@ -10,7 +10,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
 import { safeErrorMessage } from "@/lib/errors";
